@@ -84,7 +84,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
 .filters.has-notes{flex-wrap:wrap;overflow:visible}
-.notesq{flex:1 1 230px;margin-left:auto;min-width:0;display:flex;align-items:center;gap:8px;border:1.5px solid var(--yellow);border-radius:30px;padding:0 14px;background:rgba(232,168,62,.08)}
+.notesq-wrap{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.notesq-wrap b{font:700 12px/1 var(--head);letter-spacing:.06em;text-transform:uppercase;color:var(--yellow)}
+.notesq{min-width:0;display:flex;align-items:center;gap:8px;border:1.5px solid var(--yellow);border-radius:30px;padding:0 14px;background:rgba(232,168,62,.08)}
 .notesq svg{width:15px;height:15px;flex:none;color:var(--yellow)}
 .notesq input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:500 13.5px/1 var(--body);padding:9px 0}
 .notesq input::placeholder{color:var(--lav)}
@@ -393,7 +395,7 @@ function filterBar(kind) {
   }
   if (kind === 'flavors') h = h.replace('<div class="filters">', '<div class="filters has-notes">');
   if (kind === 'flavors') h += `<select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select>`;
-  if (kind === 'flavors') h += `<label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Try &ldquo;Bad Breath&rdquo;, &ldquo;Kiwi&rdquo;, or &ldquo;Onions&rdquo;" aria-label="Search the tasting notes" autocomplete="off"></label>`;
+  if (kind === 'flavors') h += `<div class="notesq-wrap"><b>Search by Strain or Tasting Note</b><label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Try &ldquo;Kiwi&rdquo;, &ldquo;Onions&rdquo;, or your favorite Flavorade" aria-label="Search by strain or tasting note" autocomplete="off"></label></div>`;
   return h + '</div>';
 }
 const empty = (title, msg) => `<div class="empty"><b>${title}</b>${msg}${didYouMean()}</div>`;
@@ -445,14 +447,13 @@ function viewFlavors() {
   const t = terms();
   // tasting-notes search: comma-separated tastes match ANY; words inside one taste must all appear
   const tastes = S.tq.split(',').map(x => norm(x).split(/\s+/).filter(Boolean)).filter(x => x.length);
-  const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm(p.notes || '').includes(w)));
+  const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm((p.name || '') + ' ' + (p.notes || '')).includes(w)));
   let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p) && (!S.zipPt || p.drops.some(near)));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
   let h = filterBar('flavors');
   h += `<div class="sec-title"><h2>All flavors</h2><small>${list.length} of ${live.length}</small></div>`;
-  if (!t.length && !S.type && !S.collab && !S.city) h += suggest;
   h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q || S.tq) + '”', 'Try another taste, like mango, gas, candy or onions.');
   if (list.length > S.limit) h += `<button class="more-btn" data-more>Show ${Math.min(40, list.length - S.limit)} more →</button>`;
   return h;
