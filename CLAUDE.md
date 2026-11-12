@@ -54,6 +54,7 @@ It publishes the **Week of** the coming Monday.
 5. **Fix what the report lists:**
    - **"Unknown store license":** look up the store name at `https://higherorigins.com/license-search/<LICENSE>` (fetch with `include_selectors: ["h1"]`) and check the GrowFlow address with a web search.
      - Add it to `stores.json` as "Store | City", using the town from the address spelled out ("Sacramento", not "Sac").
+     - Also save the store's 5-digit zip from the GrowFlow address as `"zip"` in `stores.json`. The near-me search uses it; `tools/geo.js` rebuilds `geo.js` on every real run.
      - Off The Charts is "OTC". A Higher Ground "RD ..." entity is "Higher Ground". Use the store's existing name if it already appears in `data.js`.
    - **PMG, Perfect Union or Movocan "not recognized":** do NOT guess. Leave it held and ask the owner. Add their answer to `rules.json`.
    - **"NEED TASTING NOTES":** look each flavor up in sheet `1UVE-yAzlKXEOEK8U1_znxgEOAi7Pgcqs9pifJTkUX0Q`, tab "FA - Tasting Notes".

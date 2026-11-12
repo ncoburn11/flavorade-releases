@@ -240,4 +240,6 @@ delete state.menuSnapshot;
 for (const w of Object.keys(state.menuLog || {})) if (w < addDays(CUTOFF, -30)) delete state.menuLog[w];
 fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n');
 fs.writeFileSync(path.join(ROOT, 'tools', 'last-report.md'), text);
+const geo = require('./geo').build(); // store locations for the near-me search
+if (geo.missing.length) console.log('Stores with no location for near-me (add a zip to stores.json):', geo.missing.join(', '));
 console.log('Written: data.js, flavors-of-the-month.js, tools/state.json, tools/last-report.md');

@@ -38,6 +38,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hero p.warn{margin:14px auto 0;max-width:34em;font:700 clamp(14px,3.6vw,16px)/1.35 var(--head);letter-spacing:.03em;text-transform:uppercase;color:var(--yellow)}
 .hero p.sub{margin:12px 0 0;font-style:italic;color:var(--lav);font-size:17px}
 .hero p.sub b{font-style:normal;color:#fff}
+.share{margin:12px auto 0;display:inline-block;border:1.5px solid var(--yellow);background:transparent;color:var(--yellow);border-radius:30px;padding:7px 18px;font:700 12px/1 var(--head);letter-spacing:.06em;text-transform:uppercase}
+.near{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 2px 0;color:var(--lav);font:600 13px/1.2 var(--head);letter-spacing:.02em}
+.near input,.near select{border:1.5px solid var(--line);background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:7px 10px;font:600 14px/1 var(--body)}
+.near input{width:84px}
+.near input:focus,.near select:focus{outline:2px solid var(--yellow);outline-offset:1px}
+.near button{border:0;background:none;color:var(--yellow);text-decoration:underline;font:inherit;padding:4px}
+.near-msg{margin:6px 2px 0;font-size:13px;color:var(--yellow)}
+.mi{font:700 11px/1 var(--head);color:var(--yellow);margin-left:6px;letter-spacing:.03em}
+.viewstores{display:block;width:calc(100% - 30px);margin:0 15px 14px;border:1.5px solid var(--yellow);background:transparent;color:var(--yellow);border-radius:6px;padding:9px;font:700 12px/1 var(--head);letter-spacing:.05em;text-transform:uppercase}
+.drow-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .tabheart{width:13px;height:13px;vertical-align:-1px}
 /* sticky controls */
 .controls{position:sticky;top:0;z-index:10;background:rgba(43,22,64,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
@@ -171,6 +181,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
     <h1><span>Flavorade</span> <span>Releases.</span></h1>
     <p class="warn">Flavors sell out fast!<br>Call your shop to confirm before visiting.</p>
     <p class="sub">Search any flavor, taste, or store. <b id="updated"></b></p>
+    <button class="share" id="share" type="button">Share this page</button>
   </div>
 </header>
 
@@ -180,6 +191,15 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
       <input id="q" type="search" placeholder="Try “Blueberry”, “KushCo”, or “San Diego”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, tastes, or stores">
       <button class="clear" type="button" aria-label="Clear search">×</button>
     </label>
+    <div class="near" id="near">
+      <span>Near zip</span>
+      <input id="zip" inputmode="numeric" maxlength="5" placeholder="92101" aria-label="Your zip code" autocomplete="postal-code">
+      <span>within</span>
+      <select id="miles" aria-label="Distance"><option>5</option><option selected>10</option><option>25</option><option>50</option></select>
+      <span>miles</span>
+      <button type="button" id="nearClear" hidden>Clear</button>
+    </div>
+    <p class="near-msg" id="nearMsg" hidden></p>
   </div>
 <div class="wrap" id="fotw"></div>
 <div class="controls">
@@ -201,6 +221,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 </footer>
 
 <script src="data.js"></script>
+<script src="geo.js"></script>
 <script src="flavors-of-the-month.js"></script>
 <script>
 (() => {
@@ -267,7 +288,7 @@ const store = {
 };
 const favKey = p => (p.collab + '|' + p.name).toLowerCase();
 let favs = new Set(store.get('flavorade-favs', []));
-const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set(), pick: 'week', tq: '' };
+const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set(), pick: 'week', tq: '', weekAll: new Set(), miles: 10 };
 const params = new URLSearchParams(location.hash.slice(1));
 if (params.get('tab')) S.tab = ({ stores: 'all', fotm: 'week' })[params.get('tab')] || params.get('tab');
 if (params.get('q')) S.q = params.get('q');
@@ -290,6 +311,15 @@ const typeFilter = p => {
 };
 const collabFilter = p => !S.collab || (p.collab || 'Flavorade') === S.collab;
 const cityFilter = d => !S.city || d.city === S.city;
+// Near me: distance from the shopper's zip to each store (stores without one location, like All Stiiizy Shops, are left out).
+const GEO = window.GEO || { stores: {}, zips: {} };
+const miles = (a, b) => { const r = x => x * Math.PI / 180, dLa = r(b[0] - a[0]), dLo = r(b[1] - a[1]);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dLo / 2) ** 2; return 3958.8 * 2 * Math.asin(Math.sqrt(h)); };
+const distOf = d => { if (!S.zipPt) return null; const g = GEO.stores[d.shop + '|' + (d.city || '')]; return g ? miles(S.zipPt, g) : null; };
+const near = d => { if (!S.zipPt) return true; const m = distOf(d); return m != null && m <= S.miles; };
+const byDist = (a, b) => (distOf(a) ?? 1e9) - (distOf(b) ?? 1e9);
+const miTag = d => { const m = distOf(d); return m == null ? '' : `<span class="mi">${m < 10 ? m.toFixed(1) : Math.round(m)} mi</span>`; };
+const weekTag = w => `Week of ${fmt(w)}`;
 function hl(text) {
   // One pass over the raw text, so a term can never match inside an inserted <mark> tag.
   const t = terms().filter(x => x.length >= 2).sort((a, b) => b.length - a.length);
@@ -302,22 +332,23 @@ function hl(text) {
 const heart = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
 const caret = '<svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>';
 
-function flavorCard(p) {
+function flavorCard(p, o = {}) {
   const open = S.open.has(p.i);
   const by = p.collab ? 'Flavorade × ' + p.collab : 'Flavorade';
-  const recent = p.drops.filter(cityFilter);
+  const recent = p.drops.filter(cityFilter).filter(near).sort((a, b) => S.zipPt ? byDist(a, b) || b.week.localeCompare(a.week) : 0);
   const where = recent.length
-    ? `Last drop ${fmt(recent[0].week)} · ${p.recentStores || recent.length} store${(p.recentStores || recent.length) === 1 ? '' : 's'} lately`
-    : (S.city ? 'Not dropped in ' + esc(S.city) + ' yet' : 'Coming soon');
+    ? (S.zipPt ? `Nearest: ${esc(recent[0].shop)}, ${(distOf(recent[0]) || 0).toFixed(1)} mi · ${weekTag(recent[0].week)}`
+       : `Last drop ${fmt(recent[0].week)} · ${p.recentStores || recent.length} store${(p.recentStores || recent.length) === 1 ? '' : 's'} lately`)
+    : (S.zipPt ? `Not within ${S.miles} mi yet` : 'Coming soon');
   let more = '';
   if (open) {
     const max = S['all' + p.i] ? 999 : 12;
     let lastW = '', rows = '';
     recent.slice(0, max).forEach(d => {
-      if (d.week !== lastW) { rows += `<div class="wk">Week of ${fmt(d.week)}${d.week === latest ? ' · this week' : ''}</div>`; lastW = d.week; }
-      rows += `<div class="loc"><div><div>${esc(d.shop)}</div><div class="city">${esc(d.city)}</div></div>${d.deal ? `<div class="deal">${esc(d.deal)}</div>` : ''}</div>`;
+      if (!S.zipPt && d.week !== lastW) { rows += `<div class="wk">Week of ${fmt(d.week)}${d.week === latest ? ' · this week' : ''}</div>`; lastW = d.week; }
+      rows += `<div class="loc"><div><div>${esc(d.shop)}${miTag(d)}</div><div class="city">${esc(d.city)}${S.zipPt ? ' · ' + weekTag(d.week) : ''}</div></div>${d.deal ? `<div class="deal">${esc(d.deal)}</div>` : ''}</div>`;
     });
-    more = `<div class="fl-more"><h4>Where it dropped${S.city ? ' in ' + esc(S.city) : ''}</h4>${rows || '<div class="city">No store drops listed yet.</div>'}
+    more = `<div class="fl-more"><h4>Where it dropped${S.zipPt ? ` within ${S.miles} mi of ${S.zip}` : ''}</h4>${rows || '<div class="city">No store drops listed yet.</div>'}
       ${recent.length > max ? `<button class="toggle-more" data-all="${p.i}">Show all ${recent.length} drops</button>` : ''}</div>`;
   }
   return `<article class="card${open ? ' open' : ''}" data-p="${p.i}">
@@ -328,14 +359,14 @@ function flavorCard(p) {
           <div class="fl-by">${hl(by)}</div>
           ${p.notes ? `<div class="fl-notes">${hl(p.notes)}</div>` : ''}
           <div class="fl-meta">
-            ${p.isNew ? '<span class="pill new">NEW</span>' : ''}
+            ${!o.compact && p.isNew ? '<span class="pill new">NEW</span>' : ''}
             ${p.type ? `<span class="pill ${typeClass(p.type)}">${esc(p.type)}</span>` : ''}
-            <span class="pill where">${where}</span>
+            ${o.compact ? '' : `<span class="pill where">${where}</span>`}
           </div>
         </div>${caret}
       </button>
       <button class="fav" data-fav="${p.i}" aria-pressed="${favs.has(favKey(p))}" aria-label="Save ${esc(p.name)}">${heart}</button>
-    </div>${more}
+    </div>${o.compact ? `<button class="viewstores" data-toggle="${p.i}">${open ? 'Hide Stores' : 'View All Stores'}</button>` : ''}${more}
   </article>`;
 }
 
@@ -345,8 +376,8 @@ function storeCard(s, d, opts = {}) {
     `<button data-goto="${p.i}" class="${p.isNew && d.week === latest ? 'isnew ' : ''}${t.length && matchP(p, t) ? 'hit' : ''}">${esc(p.name)}</button>`).join('');
   const older = opts.history ? s.drops.filter(x => x !== d).slice(0, 3).map(x => fmt(x.week)).join(', ') : '';
   return `<article class="card st">
-    <div class="st-top"><div><div class="st-name">${hl(s.shop)}</div><div class="st-city">${hl(s.city)}</div></div>
-    <span class="st-date">${d.week === latest ? 'This week' : 'Wk of ' + fmt(d.week)}</span></div>
+    <div class="st-top"><div><div class="st-name">${hl(s.shop)}${miTag(d)}</div><div class="st-city">${hl(s.city)}</div></div>
+    <span class="st-date">${weekTag(d.week)}</span></div>
     ${d.deal ? `<span class="deal-b">${hl(d.deal)}</span>` : ''}
     <div class="flist">${chips}</div>
     ${older ? `<div class="st-hist">Earlier drops: ${older}</div>` : ''}
@@ -396,17 +427,17 @@ const suggest = `<p class="hint">Try: ${['mango', 'cherry', 'gas', 'candy', 'Pea
 function viewWeek() {
   const t = terms();
   const newP = (R.newFlavors[latest] || []).map(id => products[id]).filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p));
-  const wkDrops = drops.filter(d => d.week === latest && cityFilter(d) &&
+  const wkDrops = drops.filter(d => d.week === latest && near(d) &&
     (!t.length || hits(d.hay, t) || d.ids.some(id => matchP(products[id], t))));
   const shops = new Set(wkDrops.map(d => d.shop + d.city)).size;
   let h = filterBar('week');
   h += `<div class="sec-title"><h2>New flavors <span>· week of ${fmt(latest)}</span></h2><small>${newP.length} new</small></div>`;
-  h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
+  h += newP.length ? `<div class="grid">${newP.map(p => flavorCard(p, { compact: true })).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
   h += `<div class="sec-title"><h2>New Drops <span>for This Week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
-  const shown = S.allStores ? wkDrops : wkDrops.slice(0, 12);
-  if (wkDrops.length) h += `<p class="hint">Looking for your shop? Type its name or city in the search bar.</p>`;
+  if (S.zipPt) wkDrops.sort(byDist);
+  const shown = wkDrops;
   h += wkDrops.length ? `<div class="grid two">${shown.map(d => storeCard(storeMap.get(d.shop + '|' + d.city), d)).join('')}</div>` + (wkDrops.length > shown.length ? `<button class="more-btn" data-allstores>Show all ${wkDrops.length} stores</button>` : '')
-    : empty('No stores found this week', 'Try the All Time tab for earlier drops.');
+    : empty(S.zipPt ? `No drops within ${S.miles} miles this week` : 'No stores found this week', S.zipPt ? 'Try a bigger distance, or the All-Time tab.' : 'Try the All Time tab for earlier drops.');
   return h;
 }
 
@@ -415,7 +446,7 @@ function viewFlavors() {
   // tasting-notes search: comma-separated tastes match ANY; words inside one taste must all appear
   const tastes = S.tq.split(',').map(x => norm(x).split(/\s+/).filter(Boolean)).filter(x => x.length);
   const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm(p.notes || '').includes(w)));
-  let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p));
+  let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p) && (!S.zipPt || p.drops.some(near)));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
@@ -451,13 +482,13 @@ function fotmContent() {
   ws.forEach(w => FOTM[w].map(findP).filter(Boolean).forEach(p => { if (!picked.has(p)) picked.set(p, w); }));
   if (!picked.size) return h + empty('No picks yet', 'Flavors of the Week are added every Sunday.');
   const list = [...picked.keys()].sort((a, b) => fotwTier(a) - fotwTier(b) || b.recentStores - a.recentStores || a.name.localeCompare(b.name));
-  return h + `<div class="grid">${list.map(p => `<div><div class="fotm-wk">Picked week of ${fmt(picked.get(p))}</div>${flavorCard(p)}</div>`).join('')}</div>`;
+  return h + `<div class="grid">${list.map(p => `<div><div class="fotm-wk">Picked week of ${fmt(picked.get(p))}</div>${flavorCard(p, { compact: true })}</div>`).join('')}</div>`;
 }
 function weekPicksBlock() {
   if (!weekPicks.length && !picks.length) return '';
   const month = S.pick === 'month';
   const main = month ? fotmContent()
-    : `<div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div><div class="grid">${weekPicks.map(flavorCard).join('')}</div>`;
+    : `<div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div><div class="grid">${weekPicks.map(p => flavorCard(p, { compact: true })).join('')}</div>`;
   return `<section class="picks${month ? '' : ' is-week'}"><div class="side" role="tablist">
       <button role="tab" data-pick="week" aria-selected="${!month}">Flavors of the Week</button>
       <button role="tab" data-pick="month" aria-selected="${month}">Flavors of the Month</button>
@@ -468,14 +499,20 @@ function dropRow(d) {
   const t = terms();
   const chips = d.ids.map(id => products[id]).map(p =>
     `<button data-goto="${p.i}" class="${p.firstNew === d.week ? 'isnew ' : ''}${t.length && matchP(p, t) ? 'hit' : ''}">${esc(p.name)}</button>`).join('');
-  return `<div class="drow"><div class="st-name">${hl(d.shop)}</div><div class="st-city">${hl(d.city)}</div>
+  return `<div class="drow"><div class="drow-top"><div><div class="st-name">${hl(d.shop)}${miTag(d)}</div><div class="st-city">${hl(d.city)}</div></div><span class="st-date">${weekTag(d.week)}</span></div>
     ${d.deal ? `<span class="deal-b">${hl(d.deal)}</span>` : ''}<div class="flist">${chips}</div></div>`;
 }
 
+function weekRows(w, ds) {
+  if (S.zipPt) ds = [...ds].sort(byDist);
+  const all = S.weekAll.has(w), shown = all ? ds : ds.slice(0, 12);
+  return shown.map(dropRow).join('') + (ds.length > shown.length ? `<button class="more-btn" data-weekall="${w}">Show all ${ds.length} stores</button>` : '');
+}
 function viewAll() {
   const t = terms(), filtering = t.length || S.type || S.collab;
   const ok = p => matchP(p, t) && typeFilter(p) && collabFilter(p);
   const hit = d => {
+    if (!near(d)) return false;
     const flav = d.ids.some(id => ok(products[id]));
     if (!t.length) return !filtering || flav;
     const storeTxt = hits(d.hay, t);
@@ -491,7 +528,7 @@ function viewAll() {
     const nNew = (R.newFlavors[w] || []).length;
     return `<details class="wkb" data-week="${w}"${isOpen ? ' open' : ''}><summary><h3>Week of <span>${fmt(w)}</span>${w === latest ? ' · this week' : ''}</h3>
       <small>${ds.length} store${ds.length === 1 ? '' : 's'}${nNew ? ' · ' + nNew + ' new' : ''}</small>${caret}</summary>
-      <div class="rows">${isOpen ? ds.map(dropRow).join('') : ''}</div></details>`;
+      <div class="rows">${weekRows(w, ds)}</div></details>`;
   }).join('');
   return h;
 }
@@ -523,6 +560,7 @@ window.addEventListener('popstate', () => {
 });
 
 const qEl = $('#q'); qEl.value = S.q;
+if (innerWidth < 480) qEl.placeholder = 'Blueberry, KushCo, San Diego...';
 let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
 $('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
 $('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; S.push = true; render(); window.scrollTo({ top: $('.controls').getBoundingClientRect().top + scrollY, behavior: 'smooth' }); });
@@ -531,7 +569,7 @@ function onViewClick(e) {
   const el = e.target.closest('button'); if (!el) return;
   const ds = el.dataset;
   if (ds.fav) { const p = products[ds.fav], k = favKey(p); favs.has(k) ? favs.delete(k) : favs.add(k); store.set('flavorade-favs', [...favs]); render(); }
-  else if (ds.allstores !== undefined) { S.allStores = true; render(); }
+  else if (ds.weekall) { S.weekAll.add(ds.weekall); render(); }
   else if (ds.pick) { S.pick = ds.pick; render(); }
   else if (ds.toggle) { const i = +ds.toggle; S.open.has(i) ? S.open.delete(i) : S.open.add(i); render(); }
   else if (ds.all) { S['all' + ds.all] = true; render(); }
@@ -549,7 +587,7 @@ $('#fotw').addEventListener('click', onViewClick);
 $('#view').addEventListener('toggle', e => {
   const el = e.target; if (!el.matches || !el.matches('details.wkb')) return;
   const w = el.dataset.week;
-  if (el.open) { S.weeks.add(w); const rows = el.querySelector('.rows'); if (!rows.innerHTML) rows.innerHTML = drops.filter(d => d.week === w).map(dropRow).join(''); }
+  if (el.open) S.weeks.add(w);
   else S.weeks.delete(w);
 }, true);
 let ntmr;
@@ -565,6 +603,31 @@ $('#view').addEventListener('change', e => {
   const k = e.target.dataset.sel; if (!k) return;
   S[k] = e.target.value; S.limit = 40;
   render();
+});
+
+/* ---------- near me ---------- */
+const zipEl = $('#zip'), milesEl = $('#miles'), nearMsg = $('#nearMsg'), nearClear = $('#nearClear');
+function applyZip(z, save = true) {
+  z = (z || '').replace(/\D/g, '').slice(0, 5);
+  const pt = z.length === 5 ? GEO.zips[z] : null;
+  S.zip = pt ? z : ''; S.zipPt = pt || null; S.miles = +milesEl.value;
+  nearClear.hidden = !z;
+  nearMsg.hidden = !(z.length === 5);
+  nearMsg.textContent = pt ? `Showing drops within ${S.miles} miles of ${z}, closest first.` : (z.length === 5 ? 'That zip code is not in California.' : '');
+  if (save) { store.set('flavorade-zip', S.zip); store.set('flavorade-miles', S.miles); }
+}
+zipEl.value = store.get('flavorade-zip', ''); milesEl.value = String(store.get('flavorade-miles', 10));
+applyZip(zipEl.value, false);
+zipEl.addEventListener('input', () => { const before = S.zip; applyZip(zipEl.value); if (S.zip !== before || zipEl.value.length < 5) render(); });
+milesEl.addEventListener('change', () => { applyZip(zipEl.value); render(); });
+nearClear.addEventListener('click', () => { zipEl.value = ''; applyZip(''); render(); zipEl.focus(); });
+
+/* ---------- share (one button) ---------- */
+$('#share').addEventListener('click', async () => {
+  const url = 'https://www.flavoradeextracts.com/releases', btn = $('#share');
+  try { if (navigator.share) { await navigator.share({ title: 'Flavorade Releases', text: 'New Flavorade drops every week', url }); return; } } catch (e) { return; }
+  try { await navigator.clipboard.writeText(url); btn.textContent = 'Link copied'; } catch (e) { btn.textContent = url; }
+  setTimeout(() => { btn.textContent = 'Share this page'; }, 2500);
 });
 
 render();
