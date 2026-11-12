@@ -73,6 +73,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* filters */
 .filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
+.filters.has-notes{flex-wrap:wrap;overflow:visible}
+.notesq{flex:1 1 230px;margin-left:auto;min-width:0;display:flex;align-items:center;gap:8px;border:1.5px solid var(--yellow);border-radius:30px;padding:0 14px;background:rgba(232,168,62,.08)}
+.notesq svg{width:15px;height:15px;flex:none;color:var(--yellow)}
+.notesq input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:500 13.5px/1 var(--body);padding:9px 0}
+.notesq input::placeholder{color:var(--lav)}
 .chip{flex:none;border:1.5px solid var(--line);background:transparent;border-radius:30px;padding:7px 14px;font:600 13px/1.3 var(--head);letter-spacing:.03em;color:#fff}
 .chip[aria-pressed=true]{background:var(--yellow);border-color:var(--yellow);color:var(--bg)}
 select.chip{appearance:none;-webkit-appearance:none;padding-right:32px;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c58fde' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center}
@@ -172,7 +177,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 <div class="wrap searchwrap">
     <label class="search" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Try “mango”, “gas”, or “San Diego”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, tastes, or stores">
+      <input id="q" type="search" placeholder="Try “Blueberry”, “KushCo”, or “San Diego”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, tastes, or stores">
       <button class="clear" type="button" aria-label="Clear search">×</button>
     </label>
   </div>
@@ -209,7 +214,7 @@ const fmt = w => { const [, m, d] = w.split('-'); return MONTHS[+m - 1] + ' ' + 
 /* ---------- model ---------- */
 const products = R.products.map(([name, collab, type, notes], i) => ({
   i, name, collab, type, notes, drops: [], firstNew: null,
-  hay: norm([name, collab, type, notes, collab ? 'x ' + collab : 'flavorade'].join(' '))
+  hay: norm([name, collab, type, notes, collab ? 'x ' + collab : 'flavorade', collab.replace(/\s+/g, ''), name.replace(/\s+/g, '')].join(' '))
 }));
 const allWeeks = R.drops.map(d => d[0]).sort();
 const newestWeek = allWeeks[allWeeks.length - 1] || '';
@@ -225,6 +230,7 @@ const latest = weeks[0];
 Object.keys(R.newFlavors).sort().forEach(w => R.newFlavors[w].forEach(id => { if (!products[id].firstNew) products[id].firstNew = w; }));
 products.forEach(p => {
   p.drops.sort((a, b) => b.week.localeCompare(a.week));
+  p.hay += ' ' + norm([...new Set(p.drops.flatMap(d => [d.shop, d.city]))].join(' ')); // find flavors by store or city
   p.last = p.drops[0] ? p.drops[0].week : (p.firstNew || '');
   p.isNew = (R.newFlavors[latest] || []).includes(p.i);
   p.recentStores = new Set(p.drops.filter(d => d.week >= weeks[Math.min(3, weeks.length - 1)]).map(d => d.shop + '|' + d.city)).size;
@@ -261,7 +267,7 @@ const store = {
 };
 const favKey = p => (p.collab + '|' + p.name).toLowerCase();
 let favs = new Set(store.get('flavorade-favs', []));
-const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set(), pick: 'week' };
+const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set(), pick: 'week', tq: '' };
 const params = new URLSearchParams(location.hash.slice(1));
 if (params.get('tab')) S.tab = ({ stores: 'all', fotm: 'week' })[params.get('tab')] || params.get('tab');
 if (params.get('q')) S.q = params.get('q');
@@ -348,7 +354,9 @@ function filterBar(kind) {
     h += types.map(t => `<button class="chip" data-type="${t}" aria-pressed="${S.type === t}">${t}</button>`).join('');
     h += `<select class="chip" data-sel="collab" aria-label="Brand collab"><option value="">All collabs</option>${collabs.map(c => `<option${S.collab === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
   }
+  if (kind === 'flavors') h = h.replace('<div class="filters">', '<div class="filters has-notes">');
   if (kind === 'flavors') h += `<select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select>`;
+  if (kind === 'flavors') h += `<label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Tastes: Bad Breath, Kiwi, Onions..." aria-label="Search the tasting notes" autocomplete="off"></label>`;
   return h + '</div>';
 }
 const empty = (title, msg) => `<div class="empty"><b>${title}</b>${msg}</div>`;
@@ -372,14 +380,17 @@ function viewWeek() {
 
 function viewFlavors() {
   const t = terms();
-  let list = live.filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p));
+  // tasting-notes search: comma-separated tastes match ANY; words inside one taste must all appear
+  const tastes = S.tq.split(',').map(x => norm(x).split(/\s+/).filter(Boolean)).filter(x => x.length);
+  const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm(p.notes || '').includes(w)));
+  let list = live.filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
   let h = filterBar('flavors');
   h += `<div class="sec-title"><h2>All flavors</h2><small>${list.length} of ${live.length}</small></div>`;
   if (!t.length && !S.type && !S.collab && !S.city) h += suggest;
-  h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q) + '”', 'Search by name (Runtz), taste (mango, gas, candy), or collab (Bosky).');
+  h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q || S.tq) + '”', 'Try another taste, like mango, gas, candy or onions.');
   if (list.length > S.limit) h += `<button class="more-btn" data-more>Show ${Math.min(40, list.length - S.limit)} more →</button>`;
   return h;
 }
@@ -503,6 +514,15 @@ $('#view').addEventListener('toggle', e => {
   if (el.open) { S.weeks.add(w); const rows = el.querySelector('.rows'); if (!rows.innerHTML) rows.innerHTML = drops.filter(d => d.week === w).map(dropRow).join(''); }
   else S.weeks.delete(w);
 }, true);
+let ntmr;
+$('#view').addEventListener('input', e => {
+  if (e.target.id !== 'notesq') return;
+  clearTimeout(ntmr);
+  ntmr = setTimeout(() => {
+    S.tq = e.target.value; S.limit = 40; render();
+    const el = $('#notesq'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }, 150);
+});
 $('#view').addEventListener('change', e => {
   const k = e.target.dataset.sel; if (!k) return;
   S[k] = e.target.value; S.limit = 40;
