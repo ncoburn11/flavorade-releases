@@ -35,6 +35,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hero h1 span{display:inline}
 @media(max-width:640px){.hero h1 span{display:block}}
 .hero h1 span+span{color:var(--yellow)}
+.hero p.warn{margin:14px auto 0;max-width:34em;font:700 clamp(14px,3.6vw,16px)/1.35 var(--head);letter-spacing:.03em;text-transform:uppercase;color:var(--yellow)}
 .hero p.sub{margin:12px 0 0;font-style:italic;color:var(--lav);font-size:17px}
 .hero p.sub b{font-style:normal;color:#fff}
 .tabheart{width:13px;height:13px;vertical-align:-1px}
@@ -153,6 +154,7 @@ mark{background:none;color:#ffd93d;text-decoration:underline;text-decoration-thi
 <header class="hero">
   <div class="wrap">
     <h1><span>Flavorade</span> <span>Releases.</span></h1>
+    <p class="warn">Flavors sell out fast! Call your shop to confirm before visiting.</p>
     <p class="sub">Search any flavor, taste, or store. <b id="updated"></b></p>
   </div>
 </header>
