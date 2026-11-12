@@ -49,8 +49,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .search .clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.12);border-radius:999px;width:34px;height:34px;font-size:18px;line-height:1;display:none;color:#fff}
 .search.has .clear{display:block}
 .search input::-webkit-search-cancel-button{display:none}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.tabs button{border:1.5px solid var(--line);border-radius:5px;padding:9px 2px;background:transparent;color:#fff;font:700 12.5px/1.2 var(--head);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.searchwrap{padding-top:4px;padding-bottom:4px}
+#fotw:empty{display:none}
+#fotw .picks{margin:12px 0 16px}
+@media(min-width:640px){#fotw .grid{grid-template-columns:1fr 1fr}}
+.fotm-wk{font:700 13px var(--head);letter-spacing:.05em;text-transform:uppercase;color:var(--lav);margin:18px 0 8px}
+.tabs button{border:1.5px solid var(--line);border-radius:5px;padding:7px 2px;min-height:40px;background:transparent;color:#fff;font:700 12.5px/1.15 var(--head);letter-spacing:.04em;text-transform:uppercase;white-space:normal;display:flex;align-items:center;justify-content:center;text-align:center}
+@media(max-width:520px){.tabs{gap:4px}.tabs button{font-size:10.5px;letter-spacing:.02em;padding:6px 1px}}
 .tabs button[aria-selected=true]{background:var(--btn);border-color:var(--btn)}
 .tabs .count{color:var(--yellow)}
 /* filters */
@@ -151,17 +157,21 @@ mark{background:none;color:#ffd93d;text-decoration:underline;text-decoration-thi
   </div>
 </header>
 
-<div class="controls">
-  <div class="wrap">
+<div class="wrap searchwrap">
     <label class="search" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="Try “mango”, “gas”, or “San Diego”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, tastes, or stores">
       <button class="clear" type="button" aria-label="Clear search">×</button>
     </label>
+  </div>
+<div class="wrap" id="fotw"></div>
+<div class="controls">
+  <div class="wrap">
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="week">This Week</button>
       <button role="tab" data-tab="flavors">Flavors</button>
       <button role="tab" data-tab="all">All Time</button>
+      <button role="tab" data-tab="fotm">Flavors of the Month</button>
       <button role="tab" data-tab="saved"><svg class="tabheart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg> Saved <span class="count" id="favCount"></span></button>
     </nav>
   </div>
@@ -340,7 +350,7 @@ function viewWeek() {
   const wkDrops = drops.filter(d => d.week === latest && cityFilter(d) &&
     (!t.length || t.every(x => d.hay.includes(x)) || d.ids.some(id => matchP(products[id], t))));
   const shops = new Set(wkDrops.map(d => d.shop + d.city)).size;
-  let h = weekPicksBlock() + filterBar('week');
+  let h = filterBar('week');
   h += `<div class="sec-title"><h2>New flavors <span>· week of ${fmt(latest)}</span></h2><small>${newP.length} new</small></div>`;
   h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
   h += `<div class="sec-title"><h2>New Drops <span>for This Week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
@@ -368,10 +378,15 @@ function weekPicksBlock() {
   return `<section class="picks"><div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div>
     <div class="grid">${weekPicks.map(flavorCard).join('')}</div></section>`;
 }
-function picksBlock() {
-  if (!picks.length) return '';
-  return `<section class="picks"><div class="sec-title"><h2>Flavors of <span>the Month</span></h2><small>Past 4 weeks</small></div>
-    <div class="grid">${picks.map(flavorCard).join('')}</div></section>`;
+function viewFotm() {
+  const ws = Object.keys(FOTM).filter(w => w >= FOUR_WK).sort().reverse();
+  let h = `<div class="sec-title"><h2>Flavors of <span>the Month</span></h2><small>Past 4 weeks</small></div>`;
+  if (!ws.length) return h + empty('No picks yet', 'Flavors of the Week are added every Sunday.');
+  ws.forEach(w => {
+    const ps = [...new Set(FOTM[w].map(findP).filter(Boolean))];
+    if (ps.length) h += `<div class="fotm-wk">Week of ${fmt(w)}${w === latest ? ' · this week' : ''}</div><div class="grid two">${ps.map(flavorCard).join('')}</div>`;
+  });
+  return h;
 }
 
 function dropRow(d) {
@@ -391,7 +406,7 @@ function viewAll() {
     const storeTxt = t.every(x => d.hay.includes(x));
     return (S.type || S.collab) ? flav || (storeTxt && d.ids.some(id => typeFilter(products[id]) && collabFilter(products[id]))) : storeTxt || flav;
   };
-  let h = picksBlock() + filterBar('all');
+  let h = filterBar('all');
   const shown = weeks.map(w => [w, drops.filter(d => d.week === w && hit(d))]).filter(([, ds]) => ds.length);
   const total = shown.reduce((n, [, ds]) => n + ds.length, 0);
   h += `<div class="sec-title"><h2>All Time <span>· last 6 months</span></h2><small>${total} drop${total === 1 ? '' : 's'} · newest first</small></div>`;
@@ -420,8 +435,9 @@ function render() {
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
   $('#favCount').textContent = favs.size ? favs.size : '';
   $('#searchBox').classList.toggle('has', !!S.q);
-  const view = S.tab === 'week' && S.q ? viewAll : ({ week: viewWeek, flavors: viewFlavors, all: viewAll, saved: viewSaved }[S.tab] || viewWeek);
+  const view = S.tab === 'week' && S.q ? viewAll : ({ week: viewWeek, flavors: viewFlavors, all: viewAll, fotm: viewFotm, saved: viewSaved }[S.tab] || viewWeek);
   $('#view').innerHTML = view();
+  $('#fotw').innerHTML = S.q ? '' : weekPicksBlock();
   const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
   history.replaceState(null, '', p.toString() ? '#' + p : location.pathname + location.search);
 }
@@ -429,9 +445,9 @@ function render() {
 const qEl = $('#q'); qEl.value = S.q;
 let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
 $('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
-$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; render(); window.scrollTo({ top: $('.controls').offsetTop, behavior: 'smooth' }); });
+$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; render(); window.scrollTo({ top: $('.controls').getBoundingClientRect().top + scrollY, behavior: 'smooth' }); });
 
-$('#view').addEventListener('click', e => {
+function onViewClick(e) {
   const el = e.target.closest('button'); if (!el) return;
   const ds = el.dataset;
   if (ds.fav) { const p = products[ds.fav], k = favKey(p); favs.has(k) ? favs.delete(k) : favs.add(k); store.set('flavorade-favs', [...favs]); render(); }
@@ -445,7 +461,9 @@ $('#view').addEventListener('click', e => {
     S.tab = 'flavors'; S.q = p.name; qEl.value = p.name; S.type = ''; S.collab = ''; S.open.add(p.i); render();
     const card = document.querySelector(`[data-p="${p.i}"]`); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-});
+}
+$('#view').addEventListener('click', onViewClick);
+$('#fotw').addEventListener('click', onViewClick);
 $('#view').addEventListener('toggle', e => {
   const el = e.target; if (!el.matches || !el.matches('details.wkb')) return;
   const w = el.dataset.week;
