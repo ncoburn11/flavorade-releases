@@ -26,11 +26,17 @@ The Release Finder lives in this repo and is served by GitHub Pages at:
 
 The frame grows and shrinks to fit the page automatically, so customers never see a second scrollbar.
 
-## Each Monday
+## Weekly updates (automatic)
 
-1. Open `https://ncoburn11.github.io/flavorade-releases/update.html`.
-2. Paste the week's lines in the same format you used before (the `NEW FLAVORS` line + every store line).
-3. Click **Check**, fill in type + tasting notes for any brand-new flavors, click **Download data.js**.
-4. In this GitHub repo, choose **Add file → Upload files**, drop in the new `data.js`, and commit.
+Every Monday a scheduled Claude session does the update:
+
+1. It reads the past week's Flavorade deliveries from GrowFlow.
+2. It pulls tasting notes for any brand-new flavors from the FA - Tasting Notes sheet.
+3. It runs `tools/weekly.js` and pushes the new `data.js` here.
+
+To run it any other time, tell Claude "update releases". The full procedure is in `CLAUDE.md`.
+
+- `stores.json` maps each GrowFlow license to the store name, city, and deal customers see. To rename a store or change a deal, edit it there or tell Claude.
+- A store missing from `stores.json` is held back and listed in `tools/last-report.md` until it has a name.
 
 You never have to touch Squarespace again; the page picks up the new week on its own.
