@@ -273,7 +273,9 @@ if (params.get('tab')) S.tab = ({ stores: 'all', fotm: 'week' })[params.get('tab
 if (params.get('q')) S.q = params.get('q');
 
 /* ---------- helpers ---------- */
-const terms = () => norm(S.q).split(/\s+/).filter(Boolean);
+// Collab names count as one word, so "Kush Co" and "KushCo" (or "Wizard Trees" / "WizardTrees") search the same.
+const COLLAB_FIX = [...new Set(R.products.map(p => p[1]).filter(c => /\s/.test(c)))].map(c => [norm(c), norm(c).replace(/\s+/g, '')]);
+const terms = () => { let q = norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
 const matchP = (p, t) => t.every(x => p.hay.includes(x));
 const typeClass = t => /^indica$/i.test(t) ? 't-indica' : /^sativa$/i.test(t) ? 't-sativa' : 't-hybrid';
 const typeFilter = p => {
