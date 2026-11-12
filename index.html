@@ -393,7 +393,7 @@ function filterBar(kind) {
   }
   if (kind === 'flavors') h = h.replace('<div class="filters">', '<div class="filters has-notes">');
   if (kind === 'flavors') h += `<select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select>`;
-  if (kind === 'flavors') h += `<label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Tastes: Bad Breath, Kiwi, Onions..." aria-label="Search the tasting notes" autocomplete="off"></label>`;
+  if (kind === 'flavors') h += `<label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Try &ldquo;Bad Breath&rdquo;, &ldquo;Kiwi&rdquo;, or &ldquo;Onions&rdquo;" aria-label="Search the tasting notes" autocomplete="off"></label>`;
   return h + '</div>';
 }
 const empty = (title, msg) => `<div class="empty"><b>${title}</b>${msg}${didYouMean()}</div>`;
