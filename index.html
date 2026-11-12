@@ -43,6 +43,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .near input{width:84px}
 .near input:focus,.near select:focus{outline:2px solid var(--yellow);outline-offset:1px}
 .near button{border:0;background:none;color:var(--yellow);text-decoration:underline;font:inherit;padding:4px}
+.near .locate{border:1.5px solid var(--yellow);border-radius:8px;color:var(--yellow);text-decoration:none;padding:7px 10px;font:700 12px/1 var(--head);letter-spacing:.04em;text-transform:uppercase}
 .near-msg{margin:6px 2px 0;font-size:13px;color:var(--yellow)}
 .mi{font:700 11px/1 var(--head);color:var(--yellow);margin-left:6px;letter-spacing:.03em}
 .viewstores{display:block;width:calc(100% - 30px);margin:0 15px 14px;border:1.5px solid var(--yellow);background:transparent;color:var(--yellow);border-radius:6px;padding:9px;font:700 12px/1 var(--head);letter-spacing:.05em;text-transform:uppercase}
@@ -197,6 +198,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
       <span>within</span>
       <select id="miles" aria-label="Distance"><option>5</option><option selected>10</option><option>25</option><option>50</option></select>
       <span>miles</span>
+      <button type="button" id="locate" class="locate">Use my location</button>
       <button type="button" id="nearClear" hidden>Clear</button>
     </div>
     <p class="near-msg" id="nearMsg" hidden></p>
@@ -619,6 +621,23 @@ zipEl.value = store.get('flavorade-zip', ''); milesEl.value = String(store.get('
 applyZip(zipEl.value, false);
 zipEl.addEventListener('input', () => { const before = S.zip; applyZip(zipEl.value); if (S.zip !== before || zipEl.value.length < 5) render(); });
 milesEl.addEventListener('change', () => { applyZip(zipEl.value); render(); });
+// "Use my location": find the closest California zip on the phone itself (nothing is sent anywhere)
+$('#locate').addEventListener('click', () => {
+  const btn = $('#locate'), say = t => { nearMsg.hidden = false; nearMsg.textContent = t; };
+  if (!navigator.geolocation) return say('Your browser cannot share location. Type your zip code instead.');
+  btn.disabled = true; btn.textContent = 'Finding you...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    btn.disabled = false; btn.textContent = 'Use my location';
+    const me = [pos.coords.latitude, pos.coords.longitude];
+    let best = null, bd = Infinity;
+    for (const [z, pt] of Object.entries(GEO.zips)) { const d = miles(me, pt); if (d < bd) { bd = d; best = z; } }
+    if (!best || bd > 25) return say('You look to be outside California. Type a California zip code instead.');
+    zipEl.value = best; applyZip(best); render();
+  }, err => {
+    btn.disabled = false; btn.textContent = 'Use my location';
+    say(err.code === 1 ? 'Location is blocked. Allow it in your browser settings, or type your zip code.' : 'Could not find your location. Type your zip code instead.');
+  }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+});
 nearClear.addEventListener('click', () => { zipEl.value = ''; applyZip(''); render(); zipEl.focus(); });
 
 

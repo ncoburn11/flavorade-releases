@@ -13,7 +13,7 @@ The Release Finder lives in this repo and is served by GitHub Pages at:
 
 ```html
 <iframe id="flavorade-finder" src="https://ncoburn11.github.io/flavorade-releases/"
-  title="Flavorade Release Finder" loading="lazy"
+  title="Flavorade Release Finder" loading="lazy" allow="geolocation"
   style="width:100%;height:1400px;border:0;display:block"></iframe>
 <script>
   window.addEventListener('message', function (e) {
