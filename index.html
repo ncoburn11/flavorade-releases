@@ -18,7 +18,7 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
-body{margin:0;min-height:100vh;background:var(--bg) linear-gradient(135deg,var(--bg) 0%,#3f2160 45%,var(--bg-2) 100%) no-repeat;color:var(--ink);font:16px/1.5 var(--body)}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 85% 0,rgba(232,168,62,.18),rgba(232,168,62,0) 600px) no-repeat,var(--bg) linear-gradient(135deg,var(--bg) 0%,#3f2160 45%,var(--bg-2) 100%) no-repeat;color:var(--ink);font:16px/1.5 var(--body)}
 button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:900px;margin:0 auto;padding:0 16px}
 /* drop ticker (same as the homepage marquee) */
@@ -29,7 +29,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes tick{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.ticker .track{animation:none}}
 /* hero (same pattern as "THE BEST / CURED RESIN.") */
-.hero{text-align:center;padding:34px 0 22px;background:radial-gradient(circle at 85% 20%,rgba(232,168,62,.18),rgba(0,0,0,0) 45%)}
+.hero{text-align:center;padding:34px 0 22px}
 .eyebrow{font:700 clamp(15px,3.6vw,20px)/1.2 var(--head);letter-spacing:.05em;color:var(--gray);margin:0;text-transform:uppercase}
 .hero h1{font:800 clamp(34px,9vw,58px)/1.02 var(--head);letter-spacing:.04em;text-transform:uppercase;margin:10px 0 0}
 .hero h1 span{display:inline}
@@ -50,16 +50,22 @@ button{font:inherit;color:inherit;cursor:pointer}
 .search .clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.12);border-radius:999px;width:34px;height:34px;font-size:18px;line-height:1;display:none;color:#fff}
 .search.has .clear{display:block}
 .search input::-webkit-search-cancel-button{display:none}
-.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .searchwrap{padding-top:4px;padding-bottom:4px}
 #fotw:empty{display:none}
-#fotw .picks{margin:12px 0 16px}
+#fotw .picks{margin:12px 0 16px;display:grid;grid-template-columns:118px 1fr;gap:14px;padding:14px}
+#fotw .side{display:flex;flex-direction:column;gap:8px}
+#fotw .side button{border:1.5px solid var(--line);border-radius:6px;background:transparent;color:#fff;font:700 12px/1.2 var(--head);letter-spacing:.04em;text-transform:uppercase;padding:12px 6px;text-align:center}
+#fotw .side button[aria-selected=true]{background:var(--yellow);border-color:var(--yellow);color:#2b1640}
+#fotw .main{min-width:0}
+#fotw .main .sec-title{margin-top:0}
+@media(max-width:520px){#fotw .picks{grid-template-columns:84px 1fr;gap:10px;padding:12px 10px}#fotw .side button{font-size:10.5px;padding:10px 3px}}
 @media(min-width:640px){#fotw .grid{grid-template-columns:1fr 1fr}}
 #fotw .grid>.card:only-child{grid-column:1/-1}
 .fotm-wk{font:700 13px var(--head);letter-spacing:.05em;text-transform:uppercase;color:var(--lav);margin:18px 0 8px}
 .tabs button{border:1.5px solid var(--line);border-radius:5px;padding:7px 2px;min-height:40px;background:transparent;color:#fff;font:700 12.5px/1.15 var(--head);letter-spacing:.04em;text-transform:uppercase;white-space:normal;display:flex;align-items:center;justify-content:center;text-align:center}
 @media(max-width:520px){.tabs{gap:4px}.tabs button{font-size:10.5px;letter-spacing:.02em;padding:6px 1px}}
-.tabs button[aria-selected=true]{background:var(--btn);border-color:var(--btn)}
+.tabs button[aria-selected=true]{background:var(--yellow);border-color:var(--yellow);color:#2b1640}
 .tabs .count{color:var(--yellow)}
 /* filters */
 .filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
@@ -171,10 +177,9 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 <div class="controls">
   <div class="wrap">
     <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="week">This Week</button>
-      <button role="tab" data-tab="flavors">Flavors</button>
-      <button role="tab" data-tab="all">All Time</button>
-      <button role="tab" data-tab="fotm">Flavors of the Month</button>
+      <button role="tab" data-tab="week">New Flavors This Week</button>
+      <button role="tab" data-tab="flavors">All Flavors</button>
+      <button role="tab" data-tab="all">All-Time</button>
       <button role="tab" data-tab="saved"><svg class="tabheart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg> Saved <span class="count" id="favCount"></span></button>
     </nav>
   </div>
@@ -253,9 +258,9 @@ const store = {
 };
 const favKey = p => (p.collab + '|' + p.name).toLowerCase();
 let favs = new Set(store.get('flavorade-favs', []));
-const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set() };
+const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set(), pick: 'week' };
 const params = new URLSearchParams(location.hash.slice(1));
-if (params.get('tab')) S.tab = params.get('tab') === 'stores' ? 'all' : params.get('tab');
+if (params.get('tab')) S.tab = ({ stores: 'all', fotm: 'week' })[params.get('tab')] || params.get('tab');
 if (params.get('q')) S.q = params.get('q');
 
 /* ---------- helpers ---------- */
@@ -376,20 +381,25 @@ function viewFlavors() {
   return h;
 }
 
-function weekPicksBlock() {
-  if (!weekPicks.length) return '';
-  return `<section class="picks"><div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div>
-    <div class="grid">${weekPicks.map(flavorCard).join('')}</div></section>`;
-}
-function viewFotm() {
+function fotmContent() {
   const ws = Object.keys(FOTM).filter(w => w >= FOUR_WK).sort().reverse();
   let h = `<div class="sec-title"><h2>Flavors of <span>the Month</span></h2><small>Past 4 weeks</small></div>`;
   if (!ws.length) return h + empty('No picks yet', 'Flavors of the Week are added every Sunday.');
   ws.forEach(w => {
     const ps = [...new Set(FOTM[w].map(findP).filter(Boolean))];
-    if (ps.length) h += `<div class="fotm-wk">Week of ${fmt(w)}${w === latest ? ' · this week' : ''}</div><div class="grid two">${ps.map(flavorCard).join('')}</div>`;
+    if (ps.length) h += `<div class="fotm-wk">Week of ${fmt(w)}${w === latest ? ' · this week' : ''}</div><div class="grid">${ps.map(flavorCard).join('')}</div>`;
   });
   return h;
+}
+function weekPicksBlock() {
+  if (!weekPicks.length && !picks.length) return '';
+  const month = S.pick === 'month';
+  const main = month ? fotmContent()
+    : `<div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div><div class="grid">${weekPicks.map(flavorCard).join('')}</div>`;
+  return `<section class="picks"><div class="side" role="tablist">
+      <button role="tab" data-pick="week" aria-selected="${!month}">Flavors of the Week</button>
+      <button role="tab" data-pick="month" aria-selected="${month}">Flavors of the Month</button>
+    </div><div class="main">${main}</div></section>`;
 }
 
 function dropRow(d) {
@@ -438,7 +448,7 @@ function render() {
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
   $('#favCount').textContent = favs.size ? favs.size : '';
   $('#searchBox').classList.toggle('has', !!S.q);
-  const view = S.tab === 'week' && S.q ? viewAll : ({ week: viewWeek, flavors: viewFlavors, all: viewAll, fotm: viewFotm, saved: viewSaved }[S.tab] || viewWeek);
+  const view = S.tab === 'week' && S.q ? viewAll : ({ week: viewWeek, flavors: viewFlavors, all: viewAll, saved: viewSaved }[S.tab] || viewWeek);
   $('#view').innerHTML = view();
   $('#fotw').innerHTML = S.q ? '' : weekPicksBlock();
   const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
@@ -454,6 +464,7 @@ function onViewClick(e) {
   const el = e.target.closest('button'); if (!el) return;
   const ds = el.dataset;
   if (ds.fav) { const p = products[ds.fav], k = favKey(p); favs.has(k) ? favs.delete(k) : favs.add(k); store.set('flavorade-favs', [...favs]); render(); }
+  else if (ds.pick) { S.pick = ds.pick; render(); }
   else if (ds.toggle) { const i = +ds.toggle; S.open.has(i) ? S.open.delete(i) : S.open.add(i); render(); }
   else if (ds.all) { S['all' + ds.all] = true; render(); }
   else if (ds.type) { S.type = S.type === ds.type ? '' : ds.type; render(); }
