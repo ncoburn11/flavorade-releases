@@ -4,14 +4,14 @@ Public page: https://ncoburn11.github.io/flavorade-releases/ (embedded on flavor
 Never use emoji anywhere on the page. Never link to or copy anything from the private buyers menu (ncoburn11/live-menu).
 Never guess a store, city or flavor. If something is not covered by these rules, hold it back and ask the owner.
 
-The update runs **every Sunday at 8:47 AM Pacific** (or when the owner says "update releases").
+The update runs **every Sunday at about 6 PM Pacific (scheduled 5:47 PM)** (or when the owner says "update releases").
 It publishes the **Week of** the coming Monday.
 
 ## Rules (all in `rules.json` and enforced by `tools/weekly.js`)
 - **Orders:** every GrowFlow order on license `C11-0001795-LIC` (region `ca`) counts.
   - It must be in stage CLOSED or IN_TRANSFER.
   - It must be of type RETAIL, DISTRIBUTOR or MICRO_BUSINESS.
-  - Its effective date must be after the last run (`tools/state.json` `lastCutoff`) and up to now. Normally that's Monday to Sunday morning; orders transferred on Sunday after the run roll into the next week.
+  - Its effective date must be after the last run (`tools/state.json` `lastCutoff`) and up to now. Normally that is Monday to Sunday evening; orders transferred on Sunday after the run roll into the next week.
 - **Effective date:** the transfer date. If the order's comment or notes give a later date (within 30 days), use that date instead. For example, SGI "Monday 11/16".
 - **Only Flavorade vape lines count:** no samples, VUZE, Sirius, Casual, batteries or kits.
 - **C11 distributors are never shown, except these five:**
