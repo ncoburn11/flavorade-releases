@@ -111,7 +111,7 @@ main{padding-bottom:44px}
 .flist button.hit{border-color:var(--yellow);background:rgba(255,217,61,.14)}
 .flist button.isnew:after{content:" NEW";font:800 10px var(--head);letter-spacing:.06em;color:var(--yellow)}
 .st-hist{margin-top:10px;font-size:13px;color:var(--lav)}
-.wkb{border:1px solid var(--line);border-radius:12px;margin:0 0 10px;background:var(--panel)}
+.wkb{border:1px solid var(--line);border-left:4px solid var(--yellow);border-radius:12px;margin:0 0 16px;background:var(--panel)}
 .wkb>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 15px}
 .wkb>summary::-webkit-details-marker{display:none}
 .wkb>summary h3{margin:0;font:800 16px/1.2 var(--head);letter-spacing:.05em;text-transform:uppercase}
@@ -225,6 +225,7 @@ const findP = x => { const [name, collab] = String(x).split('|').map(s => s.trim
   return live.filter(p => norm(p.name) === norm(name) && (!collab || norm(p.collab) === norm(collab))).sort((a, b) => b.last.localeCompare(a.last))[0]; };
 const picks = [...new Set(Object.keys(FOTM).filter(w => w >= FOUR_WK).sort().reverse()
   .flatMap(w => FOTM[w].map(findP)).filter(Boolean))];
+const weekPicks = [...new Set((FOTM[latest] || []).map(findP).filter(Boolean))];
 const collabs = [...new Set(live.map(p => p.collab || 'Flavorade'))].sort((a, b) => a === 'Flavorade' ? -1 : b === 'Flavorade' ? 1 : a.localeCompare(b));
 
 $('#updated').textContent = 'Updated for the week of ' + fmt(latest) + '.';
@@ -339,7 +340,7 @@ function viewWeek() {
   const wkDrops = drops.filter(d => d.week === latest && cityFilter(d) &&
     (!t.length || t.every(x => d.hay.includes(x)) || d.ids.some(id => matchP(products[id], t))));
   const shops = new Set(wkDrops.map(d => d.shop + d.city)).size;
-  let h = filterBar('week');
+  let h = weekPicksBlock() + filterBar('week');
   h += `<div class="sec-title"><h2>New flavors <span>· week of ${fmt(latest)}</span></h2><small>${newP.length} new</small></div>`;
   h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
   h += `<div class="sec-title"><h2>New Drops <span>for This Week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
@@ -362,6 +363,11 @@ function viewFlavors() {
   return h;
 }
 
+function weekPicksBlock() {
+  if (!weekPicks.length) return '';
+  return `<section class="picks"><div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div>
+    <div class="grid">${weekPicks.map(flavorCard).join('')}</div></section>`;
+}
 function picksBlock() {
   if (!picks.length) return '';
   return `<section class="picks"><div class="sec-title"><h2>Flavors of <span>the Month</span></h2><small>Past 4 weeks</small></div>
@@ -414,7 +420,8 @@ function render() {
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
   $('#favCount').textContent = favs.size ? favs.size : '';
   $('#searchBox').classList.toggle('has', !!S.q);
-  $('#view').innerHTML = ({ week: viewWeek, flavors: viewFlavors, all: viewAll, saved: viewSaved }[S.tab] || viewWeek)();
+  const view = S.tab === 'week' && S.q ? viewAll : ({ week: viewWeek, flavors: viewFlavors, all: viewAll, saved: viewSaved }[S.tab] || viewWeek);
+  $('#view').innerHTML = view();
   const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
   history.replaceState(null, '', p.toString() ? '#' + p : location.pathname + location.search);
 }

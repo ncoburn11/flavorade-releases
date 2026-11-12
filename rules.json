@@ -1,0 +1,71 @@
+{
+  "_doc": "Rules for the Sunday release update. Edit with care; see CLAUDE.md.",
+  "distributorLicense": "C11-0001795-LIC",
+  "liveMenuRoom": "Bulk Inventory",
+  "includeStages": ["CLOSED", "IN_TRANSFER"],
+  "includeOrderTypes": ["RETAIL", "DISTRIBUTOR", "MICRO_BUSINESS", "RETAIL_MY_LICENSE"],
+  "neverList": {
+    "C12-0000655-LIC": "Frozen Produce LLC",
+    "C10-0001298-LIC": "Hollister Distribution",
+    "C12-0000453-LIC": "510 Consultants"
+  },
+  "c11Allowed": {
+    "C11-0001947-LIC": { "name": "SGI Jackson (Stiiizy)", "mode": "fixed", "shop": "All Stiiizy Shops", "city": "California", "skipIfNote": "sample" },
+    "C11-0001469-LIC": { "name": "IE Licensing (Syndicate)", "mode": "fixed", "shop": "All Syndicate Shops", "city": "Southern California" },
+    "C11-0002014-LIC": { "name": "PMG Lyfted Farms", "mode": "pmg" },
+    "C11-0000276-LIC": { "name": "Big Tree Industries (Perfect Union)", "mode": "perfectUnion" },
+    "C11-0000807-LIC": { "name": "Movocan", "mode": "movocan" }
+  },
+  "perfectUnionVendorNamePattern": "CK DIST",
+  "pmgComments": {
+    "SABRE SPRINGS": ["March & Ash", "Sabre Springs"],
+    "MISSION VALLEY": ["March & Ash", "Mission Valley"],
+    "MARCH AND ASH VISTA": ["March & Ash", "Vista"],
+    "TOASTY SACRAMENTO": ["Toasty", "Sacramento"],
+    "SERENITY": ["Serenity", "Lathrop"],
+    "FRESNO": ["Higher Level", "Fresno"],
+    "X1 TRACY": ["X1", "Tracy"],
+    "FLAVORS": ["Flavors", "Riverbank"],
+    "FLAVORS ANTIOCH": ["Flavors", "Antioch"],
+    "BLUEFIRE": ["Bluefire", "Merced"],
+    "PCF": ["PCF", "Modesto"],
+    "PACKS": ["Packs", "Stockton"],
+    "PHENOS MODESTO": ["Phenos", "Modesto"],
+    "PUFF-N-DASH CHULA VISTA BROADWAY": ["Puff-N-Dash", "Chula Vista Broadway"],
+    "PUFF-N-DASH CHULA VISTA H ST": ["Puff-N-Dash", "Chula Vista H St"],
+    "PUFF-N-DASH CITY HEIGHTS": ["Puff-N-Dash", "City Heights"],
+    "THE W": ["Club W", "Modesto"],
+    "ODEAN": null
+  },
+  "perfectUnionCodes": [
+    ["JACKPOT", null],
+    ["MORRO BAY", "Morro Bay"],
+    ["BANNING", "Banning"],
+    ["METRO", "San Diego"],
+    ["SAN DIEGO", "San Diego"]
+  ],
+  "movocanCities": ["Calexico", "Winterhaven", "El Centro", "Brawley", "Imperial", "Holtville", "Calipatria", "Westmorland", "Seeley", "Heber", "Niland"],
+  "knownOtherC11": {
+    "C11-0001040-LIC": "KMMK Distribution",
+    "C11-0002082-LIC": "Jwm Group Holdings",
+    "C11-0000090-LIC": "Metta Distribution",
+    "C11-0000411-LIC": "Acme Distribution",
+    "C11-0000437-LIC": "AGC Distribution",
+    "C11-0001316-LIC": "RMG Distribution",
+    "C11-0001573-LIC": "Green Distribution Services",
+    "C11-0001650-LIC": "Happy Valley Manufacturing and Distribution",
+    "C11-0000038-LIC": "Charlie Mike",
+    "C11-0000228-LIC": "West Coast Sunrise Industries",
+    "C11-0001142-LIC": "Pacific Shield Vertical",
+    "C11-0001480-LIC": "Enhanced Energies",
+    "C11-0001638-LIC": "2338 Anaheim Industries",
+    "C11-0000769-LIC": "Maverick Star",
+    "C11-0001235-LIC": "Green Rocket Design and Technology",
+    "C11-0001847-LIC": "Bishop Boyz"
+  },
+  "fotw": {
+    "count": 2,
+    "fruity": ["fruit", "berry", "cherry", "grape", "mango", "peach", "lemon", "lime", "orange", "citrus", "melon", "pineapple", "apple", "tropical", "punch", "candy", "juice", "tangie"],
+    "gassy": ["gas", "fuel", "diesel", "chem", "og", "skunk", "kush", "petrol", "garlic", "onion", "funk"]
+  }
+}

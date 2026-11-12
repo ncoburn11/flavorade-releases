@@ -1,95 +1,270 @@
 #!/usr/bin/env node
-// Weekly Flavorade release update.
+// Sunday release update for the Flavorade Release Finder. See CLAUDE.md for the full procedure.
 //
-//   node tools/weekly.js --week 2026-11-16 --orders gf1.json [gf2.json ...] [--notes notes.json] [--extra extra.json] [--dry]
+//   node tools/weekly.js --orders o1.json [o2.json ...] --menu m1.json [m2.json ...] \
+//        --deals deals.json [--notes notes.json] [--now 2026-11-15T16:47:00Z] [--dry]
 //
-// --orders  GrowFlow RETAIL order query results (see CLAUDE.md for the exact query).
-//           Deliveries from Mon-Sun become the drops for the FOLLOWING Monday (--week).
-// --week    The Monday to publish (YYYY-MM-DD). Default: this week's Monday (California time).
-// --notes   {"Strain|Collab": {"type": "Hybrid", "notes": "Grape & Gas"}} for brand-new flavors
-//           (from the FA - Tasting Notes sheet).
-// --extra   [{"shop":"Stiiizy","city":"Los Angeles","deal":"","flavors":["Flavorade x Sirius | Blue Dream | Vape Cart | 1g"]}]
-//           for stores supplied outside GrowFlow.
-// --dry     Print the report without writing data.js.
+// --orders  GrowFlow order query pages (see CLAUDE.md for the query; include comment, notes,
+//           internalNote and line-item sample flags).
+// --menu    GrowFlow inventory pages for the IN STOCK room (rules.liveMenuRoom).
+// --deals   Values of the "Current - 2026" tab of the deals sheet (JSON from get_values).
+// --notes   {"Strain|Collab": {"type": "...", "notes": "..."}} for flavors new to data.js.
+// --now     Pretend the run happens at this time (testing). Default: now.
+// --dry     Print the report, change nothing.
 //
-// Store names come from stores.json (GrowFlow license -> {shop, city, deal}). Stores missing from
-// stores.json are NOT published; they are listed in the report so a name can be added.
+// Rules (rules.json + tools/state.json):
+// - Window: orders whose effective date is after state.lastCutoff and up to now. The effective date
+//   is the transfer date, or a later date written in the order's comment/notes (within 30 days).
+// - Only CLOSED / IN_TRANSFER orders; only Flavorade vape lines; sample lines left out.
+// - C11 distributors are never shown, except the five in rules.c11Allowed. Unknown C11s are reported.
+// - Everything is published as the week of the coming Monday (run on Sunday -> next day).
+// - New flavors = flavors moved to the IN STOCK menu on the weekend 15 days before that Monday
+//   (state.menuLog). Each run snapshots the IN STOCK menu and logs this weekend's additions.
+// - Flavors of the Week: 2 picks from the week's new flavors (priority rule in pickFotw()).
+// - Deals come from the deals sheet. Weeks older than 6 months are removed.
 const fs = require('fs');
 const path = require('path');
 const L = require('./lib');
 
 const args = process.argv.slice(2);
-const opt = { orders: [] };
+const opt = { orders: [], menu: [] };
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
-  if (a === '--orders') { while (args[i + 1] && !args[i + 1].startsWith('--')) opt.orders.push(args[++i]); }
+  if (a === '--orders' || a === '--menu') { const k = a.slice(2); while (args[i + 1] && !args[i + 1].startsWith('--')) opt[k].push(args[++i]); }
   else if (a === '--dry') opt.dry = true;
   else if (a.startsWith('--')) opt[a.slice(2)] = args[++i];
 }
-const thisMonday = () => { const d = new Date(L.caDate(Date.now()) + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7); return d.toISOString().slice(0, 10); };
-const week = opt.week || thisMonday();
-if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || new Date(week + 'T12:00:00Z').getUTCDay() !== 1) { console.error('--week must be a Monday, YYYY-MM-DD'); process.exit(1); }
-
+const ROOT = L.ROOT;
+const readJSON = f => JSON.parse(fs.readFileSync(f, 'utf8'));
+const rules = readJSON(path.join(ROOT, 'rules.json'));
+const statePath = path.join(ROOT, 'tools', 'state.json');
+const state = readJSON(statePath);
+const stores = readJSON(path.join(ROOT, 'stores.json'));
+const notes = opt.notes ? readJSON(opt.notes) : {};
 const R = L.loadData();
-const stores = JSON.parse(fs.readFileSync(path.join(L.ROOT, 'stores.json'), 'utf8'));
-const notes = opt.notes ? JSON.parse(fs.readFileSync(opt.notes, 'utf8')) : {};
-const extra = opt.extra ? JSON.parse(fs.readFileSync(opt.extra, 'utf8')) : [];
+const norm = L.norm;
 
-// product lookup
-const key = (strain, collab) => L.norm(collab) + '|' + L.norm(strain);
-const pIndex = new Map(R.products.map((p, i) => [key(p[0], p[1]), i]));
-const byStrain = new Map(); R.products.forEach((p, i) => { const k = L.norm(p[0]); if (!byStrain.has(k)) byStrain.set(k, i); });
-const added = [];
+const NOW = opt.now ? new Date(opt.now) : new Date();
+const DAY = 86400000;
+const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const today = L.caDate(NOW);
+const dow = new Date(today + 'T12:00:00Z').getUTCDay(); // 0 = Sunday
+const WEEK = addDays(today, dow === 0 ? 1 : 8 - dow);     // the coming Monday
+const SUNDAY = addDays(WEEK, -1);                          // this run's Sunday
+const since = new Date(state.lastCutoff);
+
+/* ---------- effective date ---------- */
+function effectiveDate(o) {
+  const t = new Date(o.transferDate);
+  const text = [o.comment, o.notes, o.internalNote].filter(Boolean).join(' ');
+  let best = t;
+  for (const m of text.matchAll(/(?<![\d/])(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?![\d/])/g)) {
+    const mo = +m[1], d = +m[2]; if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
+    const years = m[3] ? [m[3].length === 2 ? 2000 + +m[3] : +m[3]] : [t.getUTCFullYear() - 1, t.getUTCFullYear(), t.getUTCFullYear() + 1];
+    for (const y of years) {
+      const c = new Date(Date.UTC(y, mo - 1, d, 20)); // noon California
+      if (c > t && c - t <= 30 * DAY && L.caDate(c) > L.caDate(t) && c > best) best = c;
+    }
+  }
+  return best;
+}
+
+/* ---------- which store(s) an order belongs to ---------- */
+const sampleLine = li => li.isSample || li.isEducationalSample || li.isVoided;
+function classify(o) {
+  const v = o.vendor || {}, lic = v.licenseNumber || '', vname = (v.name || '').trim();
+  const text = [o.comment, o.notes, o.internalNote].filter(Boolean).join(' ');
+  if (rules.neverList[lic]) return { skip: 'never listed: ' + rules.neverList[lic] };
+  const puByName = new RegExp(rules.perfectUnionVendorNamePattern, 'i').test(vname);
+  const allowed = rules.c11Allowed[lic] || (puByName ? { mode: 'perfectUnion', name: vname } : null);
+  if (lic.startsWith('C11-') && !allowed) {
+    return rules.knownOtherC11[lic] ? { skip: 'C11 not shown: ' + rules.knownOtherC11[lic] } : { newC11: true, skip: 'NEW C11 (not shown): ' + vname };
+  }
+  if (allowed) {
+    if (allowed.skipIfNote && new RegExp(allowed.skipIfNote, 'i').test(text)) return { skip: allowed.name + ' staff samples' };
+    if (allowed.mode === 'fixed') return { shops: [[allowed.shop, allowed.city]] };
+    if (allowed.mode === 'pmg') {
+      const code = String(o.comment || '').replace(/\*/g, ' ').replace(/[.]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+      // match the comment to a known code, or to that store's "shop city" / "city shop" / city / shop
+      const entries = Object.entries(rules.pmgComments), c = norm(code);
+      const forms = ([k, m]) => [k].concat(m ? [m[0] + m[1], m[1] + m[0], m[1], m[0]] : []).map(norm);
+      let hit = entries.find(e => norm(e[0]) === c) || entries.find(e => forms(e).slice(1, 3).includes(c));
+      if (!hit) { const one = entries.filter(e => forms(e).slice(3).includes(c)); if (one.length === 1) hit = one[0]; }
+      if (!hit) return { hold: `PMG comment not recognized: "${o.comment || ''}"` };
+      const [key, m] = hit;
+      return m ? { shops: [m] } : { skip: `PMG "${key}" is not listed` };
+    }
+    if (allowed.mode === 'perfectUnion') {
+      const T = text.toUpperCase();
+      const hit = rules.perfectUnionCodes.find(([code]) => T.includes(code));
+      if (!hit) return { hold: `Perfect Union shop not recognized: "${text}"` };
+      return hit[1] ? { shops: [['Perfect Union', hit[1]]] } : { skip: `Perfect Union ${hit[0]} is not listed` };
+    }
+    if (allowed.mode === 'movocan') {
+      const cities = rules.movocanCities.filter(c => norm(text).includes(norm(c)));
+      if (!cities.length) return { hold: `Movocan city not found in notes: "${text}"` };
+      return { shops: cities.map(c => ['Movocan', c]) };
+    }
+  }
+  const s = stores[lic];
+  if (!s) return { hold: `Unknown store license ${lic}: ${vname}, ${v.vendorAddress || ''} (look it up, add to stores.json)` };
+  return { shops: [[s.shop, s.city]] };
+}
+
+/* ---------- products ---------- */
+const pKey = (strain, collab) => norm(collab) + '|' + norm(strain);
+const pIndex = new Map(R.products.map((p, i) => [pKey(p[0], p[1]), i]));
+const created = [];
 function pid(f) {
-  const k = key(f.strain, f.collab);
+  const k = pKey(f.strain, f.collab);
   if (pIndex.has(k)) return pIndex.get(k);
   const n = notes[`${f.strain}|${f.collab}`] || notes[f.strain] || null;
   const i = R.products.length;
   R.products.push([f.strain, f.collab, n ? n.type || '' : '', n ? n.notes || '' : '']);
-  pIndex.set(k, i); added.push(i);
+  pIndex.set(k, i); created.push(i);
   return i;
 }
-
-// build this week's drops
-const weeks = L.groupDeliveries(L.readOrders(opt.orders));
-const m = weeks.get(week) || new Map();
-const rows = [], unknown = [];
-for (const [lic, e] of [...m].sort((a, b) => a[1].firstTs < b[1].firstTs ? -1 : 1)) {
-  const s = stores[lic];
-  if (!s || !s.shop) { unknown.push({ lic, name: e.vendor.name.trim(), city: L.cityFromAddress(e.vendor.vendorAddress), flavors: e.flavors.length }); continue; }
-  rows.push([week, s.shop, s.city, s.deal || '', [...new Set(e.flavors.map(pid))]]);
-}
-for (const x of extra) {
-  const ids = [...new Set(x.flavors.map(L.parseProduct).filter(Boolean).map(pid))];
-  if (ids.length) rows.push([week, x.shop, x.city, x.deal || '', ids]);
-}
-// merge stores that share a display name (e.g. two licenses at one shop)
-const merged = [];
-for (const r of rows) {
-  const same = merged.find(x => L.norm(x[1]) === L.norm(r[1]) && L.norm(x[2]) === L.norm(r[2]));
-  if (same) same[4] = [...new Set(same[4].concat(r[4]))]; else merged.push(r);
+// fill in notes for existing products that have none
+for (const [k, n] of Object.entries(notes)) {
+  const [strain, collab = ''] = k.split('|');
+  const i = pIndex.get(pKey(strain, collab)); if (i == null) continue;
+  if (!R.products[i][3] && n.notes) R.products[i][3] = n.notes;
+  if (!R.products[i][2] && n.type) R.products[i][2] = n.type;
 }
 
-// new flavors = first time ever dropped
-const before = new Set(); R.drops.forEach(d => { if (d[0] < week) d[4].forEach(i => before.add(i)); });
-const newIds = [...new Set(merged.flatMap(r => r[4]))].filter(i => !before.has(i));
+/* ---------- drops for WEEK ---------- */
+const orders = L.readOrders(opt.orders);
+const published = new Set(state.publishedPOs || []);
+const report = { holds: [], newC11: new Map(), skipped: [], used: [] };
+const rows = new Map(); // shop|city -> row
+for (const o of orders.sort((a, b) => a.transferDate < b.transferDate ? -1 : 1)) {
+  if (!rules.includeStages.includes(o.stage) || !rules.includeOrderTypes.includes(o.orderType)) continue;
+  if (published.has(o.poNumber)) continue;
+  const eff = effectiveDate(o);
+  if (!(eff > since && eff <= NOW)) continue;
+  const flavors = (o.lineItems || []).filter(li => !sampleLine(li)).map(li => L.parseProduct(li.product && li.product.name)).filter(Boolean);
+  if (!flavors.length) continue;
+  const c = classify(o);
+  if (c.newC11) report.newC11.set(o.vendor.licenseNumber, (o.vendor.name || '').trim());
+  if (c.skip) { report.skipped.push(`PO ${o.poNumber}: ${c.skip}`); continue; }
+  if (c.hold) { report.holds.push(`PO ${o.poNumber}: ${c.hold}`); continue; }
+  for (const [shop, city] of c.shops) {
+    const k = norm(shop) + '|' + norm(city);
+    if (!rows.has(k)) rows.set(k, [WEEK, shop, city, '', []]);
+    const r = rows.get(k); r[4] = [...new Set(r[4].concat(flavors.map(pid)))];
+  }
+  report.used.push(o.poNumber);
+}
+const drops = [...rows.values()];
 
-const report = [];
-report.push(`# Release update for the week of ${week}`, '');
-report.push(`- GrowFlow stores delivered: ${m.size}; published: ${merged.length} drops`);
-report.push(`- New flavors this week: ${newIds.length ? newIds.map(i => R.products[i][0] + (R.products[i][1] ? ' x ' + R.products[i][1] : '')).join(', ') : 'none'}`);
-const noNotes = newIds.filter(i => !R.products[i][3]);
-if (noNotes.length) report.push(`- NEED TASTING NOTES: ${noNotes.map(i => R.products[i][0] + '|' + R.products[i][1]).join(', ')}`);
-if (unknown.length) { report.push('', '## Stores not published (add them to stores.json)'); unknown.forEach(u => report.push(`- ${u.lic}: ${u.name} (${u.city}), ${u.flavors} flavors`)); }
-report.push('', '## Drops', ...merged.map(r => `- ${r[1]} | ${r[2]}${r[3] ? ' (' + r[3] + ')' : ''}: ${r[4].map(i => R.products[i][0]).join(', ')}`));
-const text = report.join('\n') + '\n';
+/* ---------- deals from the sheet ---------- */
+function dealFinder(sheet) {
+  const vals = Array.isArray(sheet) ? sheet : sheet.values;
+  const rowsD = vals.slice(1).filter(r => /flavorade/i.test(r[1] || '') && String(r[7]).toUpperCase() === 'TRUE' && (r[4] || '').trim());
+  const ALIAS = { offthechartsotc: 'otc', offthecharts: 'otc', hpcoxnard: 'cannable', hpc: 'cannable', stiiizy: 'allstiiizyshops' };
+  const chainLoc = s => /\ball\b|over|norcal|northern california|locations/i.test(s);
+  const rk = r => { let k = norm(String(r[2]).replace(/\(.*?\)/g, '').replace(/\b(all|shops)\b/gi, '')); return ALIAS[k] || ALIAS[norm(r[2])] || k; };
+  const nameMatch = (r, shop) => { const k = rk(r), s = norm(shop); return k && (s.startsWith(k) || k.startsWith(s) || (k === 'allstiiizyshops' && s.includes('stiiizy'))); };
+  const isChain = r => chainLoc(r[3] || '') || /\b(all|shops)\b/i.test(r[2]);
+  return (shop, city) => {
+    const c = norm(city), cand = rowsD.filter(r => nameMatch(r, shop));
+    const loc = r => { const l = norm(r[3] || ''); return l && (l.includes(c) || c.includes(l)); };
+    const spec = cand.filter(r => !isChain(r));
+    const pick = spec.find(loc)
+      || (spec.length === 1 && rowsD.filter(x => rk(x) === rk(spec[0])).length === 1 ? spec[0] : null)
+      || cand.find(isChain);
+    return pick ? String(pick[4]).replace(/\s+/g, ' ').trim() : '';
+  };
+}
+let dealsApplied = 0;
+if (opt.deals) {
+  const find = dealFinder(readJSON(opt.deals));
+  for (const d of drops.concat(R.drops)) { const deal = find(d[1], d[2]); if (deal !== d[3]) { d[3] = deal; dealsApplied++; } }
+}
+
+/* ---------- live-menu snapshot -> new flavors ---------- */
+const menuNames = new Set();
+if (opt.menu.length) {
+  for (const f of opt.menu) {
+    const j = readJSON(f); const items = j.data ? j.data.inventories.items : j.items || j;
+    for (const it of items) {
+      if (!(Number(it.remainingQuantity) > 0)) continue;
+      if (it.room && it.room.name && it.room.name !== rules.liveMenuRoom) continue;
+      const p = L.parseProduct(it.product && it.product.name); if (p) menuNames.add(`${p.strain}|${p.collab}`);
+    }
+  }
+}
+const prevMenu = new Set(state.menuSnapshot ? state.menuSnapshot.products : []);
+const addedToMenu = [...menuNames].filter(n => !prevMenu.has(n));
+const menuLog = { ...(state.menuLog || {}) };
+if (opt.menu.length && addedToMenu.length) menuLog[SUNDAY] = [...new Set((menuLog[SUNDAY] || []).concat(addedToMenu))];
+const newWeekend = addDays(WEEK, -15);                 // the menu weekend that becomes "new" this WEEK
+const newNames = menuLog[newWeekend] || [];
+const newIds = newNames.map(n => { const [strain, collab = ''] = n.split('|'); return pid({ strain, collab: L.fixCollab(collab) }); });
+
+/* ---------- Flavors of the Week ---------- */
+const storesThisWeek = id => drops.filter(d => d[4].includes(id)).length;
+const words = list => new RegExp('\\b(' + list.join('|') + ')', 'i');
+const FRUITY = words(rules.fotw.fruity), GASSY = words(rules.fotw.gassy);
+function tier(i) {
+  const [name, collab, , n] = R.products[i]; const c = norm(collab), nm = name.toLowerCase(), txt = n || name;
+  if (c === 'notillkings') return 1;
+  if (c === 'wizardtrees') return 2;
+  if (/woodzy/i.test(name)) return 2.5;
+  if (c === 'rootedfire' && /chem/.test(nm)) return 3;
+  if (c === 'pearlpharma' && (/\bog\b/.test(nm) || /blueberry/.test(nm))) return 4;
+  if (c === 'rootedfire' && /peanut butter/.test(nm)) return 5;
+  if (c === 'rootedfire') return 6;
+  if (c === 'pearlpharma') return 7;
+  if (FRUITY.test(txt)) return 8;
+  if (GASSY.test(txt)) return 9;
+  return 10;
+}
+const fotw = [...newIds].sort((a, b) => tier(a) - tier(b) || storesThisWeek(b) - storesThisWeek(a) || R.products[a][0].localeCompare(R.products[b][0]))
+  .slice(0, rules.fotw.count);
+
+/* ---------- report ---------- */
+const pname = i => R.products[i][0] + (R.products[i][1] ? ' x ' + R.products[i][1] : '');
+const out = [];
+out.push(`# Release update: Week of ${WEEK}`, '');
+out.push(`- Orders window: ${since.toISOString()} to ${NOW.toISOString()}`);
+out.push(`- Stores published: ${drops.length} (from ${report.used.length} orders)`);
+out.push(`- New flavors (moved to IN STOCK the weekend of ${newWeekend}): ${newIds.length ? newIds.map(pname).join(', ') : 'none logged'}`);
+out.push(`- Flavors of the Week: ${fotw.length ? fotw.map(i => `${pname(i)} (tier ${tier(i)}, ${storesThisWeek(i)} stores)`).join('; ') : 'none'}`);
+out.push(`- Added to IN STOCK since last snapshot (logged for the week of ${addDays(SUNDAY, 15)}): ${opt.menu.length ? (addedToMenu.join(', ') || 'none') : 'NO MENU SNAPSHOT GIVEN'}`);
+const noNotes = [...new Set(newIds.concat(created))].filter(i => !R.products[i][3]);
+if (noNotes.length) out.push(`- NEED TASTING NOTES: ${noNotes.map(i => R.products[i][0] + '|' + R.products[i][1]).join(', ')}`);
+out.push(`- Deals updated on ${dealsApplied} store rows`);
+if (report.newC11.size) { out.push('', '## NEW C11 licenses for owner review (not shown on the page)'); for (const [l, n] of report.newC11) out.push(`- ${l}: ${n}`); }
+if (report.holds.length) { out.push('', '## Held back (needs a decision)'); report.holds.forEach(h => out.push('- ' + h)); }
+out.push('', '## Drops', ...drops.map(r => `- ${r[1]} | ${r[2]}${r[3] ? ' (' + r[3] + ')' : ''}: ${r[4].map(i => R.products[i][0]).join(', ')}`));
+if (report.skipped.length) out.push('', '## Skipped orders', ...report.skipped.map(s => '- ' + s));
+const text = out.join('\n') + '\n';
 console.log(text);
-
-if (!m.size && !extra.length) { console.error(`No GrowFlow deliveries map to the week of ${week}. Nothing written.`); process.exit(2); }
 if (opt.dry) process.exit(0);
-R.drops = merged.concat(R.drops.filter(d => d[0] !== week));
-if (newIds.length) R.newFlavors[week] = newIds; else delete R.newFlavors[week];
-R.updated = L.caDate(Date.now());
+
+/* ---------- write ---------- */
+const CUTOFF = addDays(WEEK, -182);
+R.drops = drops.concat(R.drops.filter(d => d[0] !== WEEK)).filter(d => d[0] >= CUTOFF);
+if (newIds.length) R.newFlavors[WEEK] = newIds; else delete R.newFlavors[WEEK];
+for (const w of Object.keys(R.newFlavors)) if (w < CUTOFF) delete R.newFlavors[w];
+R.updated = today;
 L.saveData(R);
-fs.writeFileSync(path.join(L.ROOT, 'tools', 'last-report.md'), text);
-console.log('data.js updated.');
+
+const fotmPath = path.join(ROOT, 'flavors-of-the-month.js');
+const fotm = (() => { try { const s = fs.readFileSync(fotmPath, 'utf8'); return JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1).replace(/^\s*\/\/.*$/mg, '').replace(/,\s*}/g, '}')); } catch { return {}; } })();
+if (fotw.length) fotm[WEEK] = fotw.map(i => `${R.products[i][0]}|${R.products[i][1]}`);
+for (const w of Object.keys(fotm)) if (w < CUTOFF) delete fotm[w];
+fs.writeFileSync(fotmPath, `// Flavors of the Week, logged each Sunday by tools/weekly.js (2 picks per week, see rules.json).
+// The page shows this week's picks as "Flavors of the Week" and the past 4 weeks as "Flavors of the Month".
+window.FLAVORS_OF_THE_MONTH = ${JSON.stringify(Object.fromEntries(Object.entries(fotm).sort().reverse()), null, 2)};
+`);
+
+state.lastCutoff = NOW.toISOString();
+state.publishedPOs = [...new Set((state.publishedPOs || []).concat(report.used))].slice(-3000);
+if (opt.menu.length) state.menuSnapshot = { takenAt: NOW.toISOString(), products: [...menuNames].sort() };
+for (const w of Object.keys(menuLog)) if (w < addDays(CUTOFF, -30)) delete menuLog[w];
+state.menuLog = menuLog;
+fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n');
+fs.writeFileSync(path.join(ROOT, 'tools', 'last-report.md'), text);
+console.log('Written: data.js, flavors-of-the-month.js, tools/state.json, tools/last-report.md');

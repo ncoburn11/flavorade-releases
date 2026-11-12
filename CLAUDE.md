@@ -1,48 +1,73 @@
-# Flavorade Release Finder: weekly update
+# Flavorade Release Finder: Sunday update
 
 Public page: https://ncoburn11.github.io/flavorade-releases/ (embedded on flavoradeextracts.com/releases).
 Never use emoji anywhere on the page. Never link to or copy anything from the private buyers menu (ncoburn11/live-menu).
+Never guess a store, city or flavor. If something is not covered by these rules, hold it back and ask the owner.
 
-When asked to "update releases" (or when the Monday scheduled task fires), do this:
+The update runs **every Sunday at 8:47 AM Pacific** (or when the owner says "update releases").
+It publishes the **Week of** the coming Monday.
 
-1. **Pick the week.** `WEEK` = the Monday being published, normally today (California time).
-   The drops for `WEEK` are the deliveries from the 7 days before it (Mon–Sun).
-2. **Pull deliveries from GrowFlow** with `wholesale_query`, using region `ca` and license
-   `C11-0001795-LIC` (Cleanline Management, INC, the distributor). Page with `skip` 0, 50, 100…
-   until you have `totalCount` items:
+## Rules (all in `rules.json` and enforced by `tools/weekly.js`)
+- **Orders:** every GrowFlow order on license `C11-0001795-LIC` (region `ca`) counts.
+  - It must be in stage CLOSED or IN_TRANSFER.
+  - It must be of type RETAIL, DISTRIBUTOR or MICRO_BUSINESS.
+  - Its effective date must be after the last run (`tools/state.json` `lastCutoff`) and up to now. Normally that's Monday to Sunday morning; orders transferred on Sunday after the run roll into the next week.
+- **Effective date:** the transfer date. If the order's comment or notes give a later date (within 30 days), use that date instead. For example, SGI "Monday 11/16".
+- **Only Flavorade vape lines count:** no samples, VUZE, Sirius, Casual, batteries or kits.
+- **C11 distributors are never shown, except these five:**
+  - SGI Jackson: "All Stiiizy Shops | California". Skip staff or anniversary sample orders.
+  - IE Licensing: "All Syndicate Shops | Southern California".
+  - PMG Lyfted Farms: the store comes from the order comment (`rules.pmgComments`).
+  - Big Tree Industries and CK Distribution: "Perfect Union | City", using the code in the comment or notes. JACKPOT is never listed.
+  - Movocan: "Movocan | City", with the city from the comment. List every city named.
+- **Unknown C11s:** any C11 that isn't in `knownOtherC11` is reported to the owner as a NEW C11 for review and is never shown.
+- **Never listed:** Frozen Produce, Hollister Distribution, 510 Consultants.
+- **Every other license is a store from `stores.json`** ("Store | City").
+- **New flavors:** each run snapshots the GrowFlow **IN STOCK** room (`Bulk Inventory`) and compares it with last Sunday's snapshot.
+  - Additions are logged under that Sunday in `state.menuLog`.
+  - They show as "New flavors" for the Week of that Sunday + 15 days. For example, moved Sunday 11/1 shows on the Week of 11/16.
+- **Flavors of the Week:** 2 picks from that week's new flavors.
+  - Priority: No Till Kings > Wizard Trees > Woodzy (Woodwide) > Rooted Fire "Chem" > Pearl Pharma "OG"/"Blueberry" > Rooted Fire "Peanut Butter" > Rooted Fire > Pearl Pharma > fruity notes > gassy notes.
+  - Ties go to the flavor at the most stores. If there are only 1 or 2 new flavors, they're all picked.
+  - Picks are logged in `flavors-of-the-month.js`. The page shows this week's picks as Flavors of the Week and the past 4 weeks as Flavors of the Month.
+- **Deals:** from sheet `1U-1GkqFKb92WSr2AtFflDz_FgCciIZjsHdaUt7uPVE4`, tab "Current - 2026".
+  - Use only rows where Brands includes Flavorade and Confirmed? is TRUE.
+  - A store-specific row beats a chain-wide row.
+- **Only 6 months of weeks are kept.** Older weeks are deleted on every run.
+
+## Steps
+1. **Orders:** run `wholesale_query` (region `ca`, license `C11-0001795-LIC`) and page with `skip` 0, 50, 100… until you have `totalCount`. Save every page's raw JSON to a file:
    ```graphql
-   { orders(skip: 0, take: 50, where: { orderType: { eq: RETAIL },
-       transferDate: { gte: "<WEEK-7>T07:00:00Z", lt: "<WEEK>T08:00:00Z" } }, order: { transferDate: ASC })
-     { totalCount items { poNumber transferDate stage vendor { name licenseNumber vendorAddress } lineItems { product { name } } } } }
+   { orders(skip: 0, take: 50, where: { transferDate: { gte: "<lastCutoff minus 21 days>", lt: "<now>" },
+       stage: { in: [CLOSED, IN_TRANSFER] }, orderType: { in: [RETAIL, DISTRIBUTOR, MICRO_BUSINESS] } }, order: { transferDate: DESC })
+     { totalCount items { poNumber orderType stage transferDate comment notes internalNote
+       vendor { name licenseNumber vendorAddress } lineItems { isSample isEducationalSample isVoided product { name } } } } }
    ```
-   Save each page's raw JSON to a file (large results are already saved to a file; copy that file).
-   The script drops orders outside the week, returned or voided orders, and non-Flavorade lines.
-3. **Dry run:**
-   ```bash
-   node tools/weekly.js --week WEEK --orders page1.json page2.json --dry
+2. **IN STOCK menu:** page through all of it and save every page:
+   ```graphql
+   { inventories(skip: 0, take: 50, where: { product: { name: { startsWith: "Flavorade" } }, room: { name: { eq: "Bulk Inventory" } } })
+     { totalCount items { product { name } remainingQuantity } } }
    ```
-4. **New flavors need tasting notes.** For each flavor under "NEED TASTING NOTES", look it up in the
-   Google Sheet `1UVE-yAzlKXEOEK8U1_znxgEOAi7Pgcqs9pifJTkUX0Q`, tab "FA - Tasting Notes".
-   - Read the whole tab. Get `rowCount` from `get_spreadsheet`, then read `A1:Z<rowCount>` in chunks of at most 400 rows.
-   - Match against the Name/Tasting Notes columns (A = type, B = name, C = notes) and against the
-     UNSORTED column E ("Flavorade x Collab | Strain | Vape Cart | 1g - Type - Notes").
-   - Write the matches to `notes.json` as `{"Strain|Collab": {"type": "...", "notes": "..."}}`.
-   - If a flavor truly has no note yet, publish it without one and say so.
-5. **Unknown stores.** Never leave a store unnamed and never guess.
-   - Stores listed under "Stores not published" have no entry in `stores.json` (license → `shop`, `city`, `deal`).
-   - Look up the license's public store name (DBA) by fetching `https://higherorigins.com/license-search/<LICENSE>`
-     (state DCC data; fetch with `include_selectors: ["h1"]`). Cross-check the GrowFlow `vendorAddress` with a web search of the address.
-   - Add the store as `"Store" | "City"` and use the town from the address, spelled out: "Sacramento", not "Sac".
-   - Use the brand customers know: Off The Charts is "OTC", and a Higher Ground "RD ..." entity is "Higher Ground".
-   - Leave off distributor orders with no clear store (KMMK, 510 Consultants, Hollister).
-6. **Stores outside GrowFlow.** For a store the owner names (Stiiizy, March and Ash, etc.), pass `--extra extra.json`.
-7. **Run for real.** Run the same command without `--dry`, then commit `data.js`, `stores.json`, and
-   `tools/last-report.md` and push to `main`. GitHub Pages republishes in about a minute.
-8. **Summarize for the owner:** the new flavors, the number of stores, any unnamed stores, and any missing notes.
-
-**Flavors of the Month** are logged week by week in `flavors-of-the-month.js` (`"YYYY-MM-DD": ["Flavor", ...]`).
-When the owner names this week's picks, add a line for WEEK and never delete old weeks. The All Time tab shows every pick logged in the past 4 weeks.
-
-The page only shows the last 6 months of drops; older data stays in `data.js`.
+3. **Deals:** `get_spreadsheet` for the row count of "Current - 2026", then `get_values` `'Current - 2026'!A1:I<rowCount>`. Save the JSON as `deals.json`.
+4. **Dry run:**
+   `node tools/weekly.js --orders o1.json o2.json ... --menu m1.json m2.json ... --deals deals.json --dry`
+5. **Fix what the report lists:**
+   - **"Unknown store license":** look up the store name at `https://higherorigins.com/license-search/<LICENSE>` (fetch with `include_selectors: ["h1"]`) and check the GrowFlow address with a web search.
+     - Add it to `stores.json` as "Store | City", using the town from the address spelled out ("Sacramento", not "Sac").
+     - Off The Charts is "OTC". A Higher Ground "RD ..." entity is "Higher Ground". Use the store's existing name if it already appears in `data.js`.
+   - **PMG, Perfect Union or Movocan "not recognized":** do NOT guess. Leave it held and ask the owner. Add their answer to `rules.json`.
+   - **"NEED TASTING NOTES":** look each flavor up in sheet `1UVE-yAzlKXEOEK8U1_znxgEOAi7Pgcqs9pifJTkUX0Q`, tab "FA - Tasting Notes".
+     - Read the whole tab: `rowCount` first, then chunks of at most 400 rows.
+     - Match against columns A to C (type, name, notes) and against the UNSORTED column E ("Flavorade x Collab | Strain | Vape Cart | 1g - Type - Notes").
+     - Write `notes.json` as `{"Strain|Collab": {"type": "...", "notes": "..."}}`. If there's truly no note, publish without one and say so.
+6. **Real run:** run the same command without `--dry`, adding `--notes notes.json`.
+   - Commit `data.js`, `stores.json`, `rules.json`, `flavors-of-the-month.js`, `tools/state.json` and `tools/last-report.md`, then push to `main`.
+   - Never run it twice for the same Sunday without `--dry`. `lastCutoff` moves forward on every real run.
+7. **Summary for the owner** (it goes out by push notification and email):
+   - The week, number of stores, new flavors and Flavors of the Week.
+   - **Any NEW C11 licenses for review.**
+   - Anything held back.
+   - New stores you named.
+   - Flavors missing tasting notes.
 
 Data format is documented at the top of `data.js`. `index.html` needs no changes for a weekly update.
