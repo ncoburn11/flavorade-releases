@@ -65,7 +65,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media(max-width:520px){#fotw .picks{grid-template-columns:calc((100% - 12px) / 4) 1fr;column-gap:4px}#fotw .side button{font-size:10.5px;padding:10px 3px}#fotw .main{padding-left:6px}}
 @media(min-width:640px){#fotw .grid{grid-template-columns:1fr 1fr}}
 #fotw .grid>.card:only-child{grid-column:1/-1}
-.fotm-wk{font:700 13px var(--head);letter-spacing:.05em;text-transform:uppercase;color:var(--lav);margin:18px 0 8px}
+.fotm-wk{font:700 11.5px var(--head);letter-spacing:.05em;text-transform:uppercase;color:var(--lav);margin:4px 0 6px}
 .tabs button{border:1.5px solid var(--line);border-radius:5px;padding:7px 2px;min-height:40px;background:transparent;color:#fff;font:700 12.5px/1.15 var(--head);letter-spacing:.04em;text-transform:uppercase;white-space:normal;display:flex;align-items:center;justify-content:center;text-align:center}
 @media(max-width:520px){.tabs{gap:4px}.tabs button{font-size:10.5px;letter-spacing:.02em;padding:6px 1px}}
 .tabs button[aria-selected=true]{background:var(--yellow);border-color:var(--yellow);color:#2b1640}
@@ -384,15 +384,31 @@ function viewFlavors() {
   return h;
 }
 
+// Same priority rule as the Sunday Flavors of the Week picks (rules.json / tools/weekly.js).
+const FRUITY = new RegExp('\\b(' + ["fruit", "berry", "cherry", "grape", "mango", "peach", "lemon", "lime", "orange", "citrus", "melon", "pineapple", "apple", "tropical", "punch", "candy", "juice", "tangie"].join('|') + ')', 'i');
+const GASSY = new RegExp('\\b(' + ["gas", "fuel", "diesel", "chem", "og", "skunk", "kush", "petrol", "garlic", "onion", "funk"].join('|') + ')', 'i');
+function fotwTier(p) {
+  const c = norm(p.collab || '').replace(/[^a-z0-9]/g, ''), nm = p.name.toLowerCase(), tx = p.notes || p.name;
+  if (c === 'notillkings') return 1;
+  if (c === 'wizardtrees') return 2;
+  if (/woodzy/.test(nm)) return 2.5;
+  if (c === 'rootedfire' && /chem/.test(nm)) return 3;
+  if (c === 'pearlpharma' && (/\bog\b/.test(nm) || /blueberry/.test(nm))) return 4;
+  if (c === 'rootedfire' && /peanut butter/.test(nm)) return 5;
+  if (c === 'rootedfire') return 6;
+  if (c === 'pearlpharma') return 7;
+  if (FRUITY.test(tx)) return 8;
+  if (GASSY.test(tx)) return 9;
+  return 10;
+}
 function fotmContent() {
   const ws = Object.keys(FOTM).filter(w => w >= FOUR_WK).sort().reverse();
   let h = `<div class="sec-title"><h2>Flavors of <span>the Month</span></h2><small>Past 4 weeks</small></div>`;
-  if (!ws.length) return h + empty('No picks yet', 'Flavors of the Week are added every Sunday.');
-  ws.forEach(w => {
-    const ps = [...new Set(FOTM[w].map(findP).filter(Boolean))];
-    if (ps.length) h += `<div class="fotm-wk">Week of ${fmt(w)}${w === latest ? ' · this week' : ''}</div><div class="grid">${ps.map(flavorCard).join('')}</div>`;
-  });
-  return h;
+  const picked = new Map(); // product -> newest week it was picked
+  ws.forEach(w => FOTM[w].map(findP).filter(Boolean).forEach(p => { if (!picked.has(p)) picked.set(p, w); }));
+  if (!picked.size) return h + empty('No picks yet', 'Flavors of the Week are added every Sunday.');
+  const list = [...picked.keys()].sort((a, b) => fotwTier(a) - fotwTier(b) || b.recentStores - a.recentStores || a.name.localeCompare(b.name));
+  return h + `<div class="grid">${list.map(p => `<div><div class="fotm-wk">Picked week of ${fmt(picked.get(p))}</div>${flavorCard(p)}</div>`).join('')}</div>`;
 }
 function weekPicksBlock() {
   if (!weekPicks.length && !picks.length) return '';
