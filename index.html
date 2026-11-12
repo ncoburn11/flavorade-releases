@@ -10,7 +10,7 @@
 <style>
 /* Matches the Flavorade Community page: plum-to-purple gradient, warm gold accent, dark plum cards */
 :root{
-  --bg:#2b1640; --bg-2:#5e338a; --panel:#35213f; --panel-2:#43294f; --ticker:#841eae; --btn:#ba4bc9; --btn-h:#a43bb3;
+  --bg:#2b1640; --bg-2:#5e338a; --panel:#35213f; --panel-2:#43294f; --ticker:#d9c4ef; --btn:#ba4bc9; --btn-h:#a43bb3;
   --yellow:#e8a83e; --lav:#c58fde; --gray:#dadada; --ink:#fff; --line:rgba(197,143,222,.24);
   --head:Montserrat,"Helvetica Neue",Arial,sans-serif;
   --body:"Proxima Nova","DM Sans","Helvetica Neue",Arial,sans-serif;
@@ -24,7 +24,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* drop ticker (same as the homepage marquee) */
 .ticker{background:var(--ticker);overflow:hidden;white-space:nowrap}
 .ticker .track{display:inline-flex;align-items:center;gap:28px;padding:10px 0;animation:tick 32s linear infinite}
-.ticker span{font:700 15px/1 var(--head);letter-spacing:.08em;color:var(--yellow)}
+.ticker span{font:700 15px/1 var(--head);letter-spacing:.08em;color:#2b1640}
 .ticker img{height:26px;width:auto;display:block}
 @keyframes tick{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.ticker .track{animation:none}}
@@ -57,6 +57,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 #fotw .picks{margin:12px 0 16px;display:grid;grid-template-columns:calc((100% - 18px) / 4) 1fr;column-gap:6px;padding:14px}
 .tabs{padding:0 16px}
 #fotw .side{display:flex;flex-direction:column;gap:8px}
+#fotw .picks.is-week .side button{flex:1}
 #fotw .side button{border:1.5px solid var(--line);border-radius:6px;background:transparent;color:#fff;font:700 12px/1.2 var(--head);letter-spacing:.04em;text-transform:uppercase;padding:12px 6px;text-align:center}
 #fotw .side button[aria-selected=true]{background:var(--yellow);border-color:var(--yellow);color:#2b1640}
 #fotw .main{min-width:0}
@@ -398,7 +399,7 @@ function weekPicksBlock() {
   const month = S.pick === 'month';
   const main = month ? fotmContent()
     : `<div class="sec-title"><h2>Flavors of <span>the Week</span></h2><small>Week of ${fmt(latest)}</small></div><div class="grid">${weekPicks.map(flavorCard).join('')}</div>`;
-  return `<section class="picks"><div class="side" role="tablist">
+  return `<section class="picks${month ? '' : ' is-week'}"><div class="side" role="tablist">
       <button role="tab" data-pick="week" aria-selected="${!month}">Flavors of the Week</button>
       <button role="tab" data-pick="month" aria-selected="${month}">Flavors of the Month</button>
     </div><div class="main">${main}</div></section>`;
