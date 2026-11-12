@@ -38,7 +38,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hero p.warn{margin:14px auto 0;max-width:34em;font:700 clamp(14px,3.6vw,16px)/1.35 var(--head);letter-spacing:.03em;text-transform:uppercase;color:var(--yellow)}
 .hero p.sub{margin:12px 0 0;font-style:italic;color:var(--lav);font-size:17px}
 .hero p.sub b{font-style:normal;color:#fff}
-.share{margin:12px auto 0;display:inline-block;border:1.5px solid var(--yellow);background:transparent;color:var(--yellow);border-radius:30px;padding:7px 18px;font:700 12px/1 var(--head);letter-spacing:.06em;text-transform:uppercase}
 .near{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 2px 0;color:var(--lav);font:600 13px/1.2 var(--head);letter-spacing:.02em}
 .near input,.near select{border:1.5px solid var(--line);background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:7px 10px;font:600 14px/1 var(--body)}
 .near input{width:84px}
@@ -183,7 +182,6 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
     <h1><span>Flavorade</span> <span>Releases.</span></h1>
     <p class="warn">Flavors sell out fast!<br>Call your shop to confirm before visiting.</p>
     <p class="sub">Search any flavor, taste, or store. <b id="updated"></b></p>
-    <button class="share" id="share" type="button">Share this page</button>
   </div>
 </header>
 
@@ -623,13 +621,6 @@ zipEl.addEventListener('input', () => { const before = S.zip; applyZip(zipEl.val
 milesEl.addEventListener('change', () => { applyZip(zipEl.value); render(); });
 nearClear.addEventListener('click', () => { zipEl.value = ''; applyZip(''); render(); zipEl.focus(); });
 
-/* ---------- share (one button) ---------- */
-$('#share').addEventListener('click', async () => {
-  const url = 'https://www.flavoradeextracts.com/releases', btn = $('#share');
-  try { if (navigator.share) { await navigator.share({ title: 'Flavorade Releases', text: 'New Flavorade drops every week', url }); return; } } catch (e) { return; }
-  try { await navigator.clipboard.writeText(url); btn.textContent = 'Link copied'; } catch (e) { btn.textContent = url; }
-  setTimeout(() => { btn.textContent = 'Share this page'; }, 2500);
-});
 
 render();
 
