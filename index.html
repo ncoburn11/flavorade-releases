@@ -118,7 +118,7 @@ main{padding-bottom:44px}
 footer{border-top:1px solid var(--line);color:var(--lav);font-size:13px;text-align:center;padding:22px 16px 30px}
 footer p{margin:4px 0}
 footer b{color:#fff}
-mark{background:rgba(255,217,61,.32);color:#fff;border-radius:3px;padding:0 1px}
+mark{background:none;color:#ffd93d;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 </style>
 </head>
@@ -229,10 +229,13 @@ const typeFilter = p => {
 const collabFilter = p => !S.collab || (p.collab || 'Flavorade') === S.collab;
 const cityFilter = d => !S.city || d.city === S.city;
 function hl(text) {
-  const t = terms(); if (!t.length) return esc(text);
-  let out = esc(text);
-  t.forEach(x => { if (x.length < 2) return; out = out.replace(new RegExp('(' + x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); });
-  return out;
+  // One pass over the raw text, so a term can never match inside an inserted <mark> tag.
+  const t = terms().filter(x => x.length >= 2).sort((a, b) => b.length - a.length);
+  if (!t.length) return esc(text);
+  const re = new RegExp(t.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'ig');
+  const raw = String(text); let out = '', last = 0, m;
+  while ((m = re.exec(raw))) { out += esc(raw.slice(last, m.index)) + '<mark>' + esc(m[0]) + '</mark>'; last = m.index + m[0].length; }
+  return out + esc(raw.slice(last));
 }
 const heart = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
 const caret = '<svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>';
