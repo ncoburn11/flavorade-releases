@@ -230,7 +230,7 @@ const latest = weeks[0];
 Object.keys(R.newFlavors).sort().forEach(w => R.newFlavors[w].forEach(id => { if (!products[id].firstNew) products[id].firstNew = w; }));
 products.forEach(p => {
   p.drops.sort((a, b) => b.week.localeCompare(a.week));
-  p.hay += ' ' + norm([...new Set(p.drops.flatMap(d => [d.shop, d.city]))].join(' ')); // find flavors by store or city
+  p.hayStores = ' ' + norm([...new Set(p.drops.flatMap(d => [d.shop, d.city]))].join(' ')); // All Flavors: find flavors by store or city
   p.last = p.drops[0] ? p.drops[0].week : (p.firstNew || '');
   p.isNew = (R.newFlavors[latest] || []).includes(p.i);
   p.recentStores = new Set(p.drops.filter(d => d.week >= weeks[Math.min(3, weeks.length - 1)]).map(d => d.shop + '|' + d.city)).size;
@@ -276,7 +276,11 @@ if (params.get('q')) S.q = params.get('q');
 // Collab names count as one word, so "Kush Co" and "KushCo" (or "Wizard Trees" / "WizardTrees") search the same.
 const COLLAB_FIX = [...new Set(R.products.map(p => p[1]).filter(c => /\s/.test(c)))].map(c => [norm(c), norm(c).replace(/\s+/g, '')]);
 const terms = () => { let q = norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
-const matchP = (p, t) => t.every(x => p.hay.includes(x));
+// A search word must match the start of a word ("sac" finds Sacramento, not "Kush Sack"... and "la" not "Black").
+const wordHit = (hay, x) => hay.startsWith(x) || hay.includes(' ' + x) || hay.includes('-' + x) || hay.includes('(' + x) || hay.includes('|' + x);
+const hits = (hay, t) => t.every(x => wordHit(hay, x));
+const matchP = (p, t) => hits(p.hay, t);
+const matchPStores = (p, t) => hits(p.hay + p.hayStores, t);
 const typeClass = t => /^indica$/i.test(t) ? 't-indica' : /^sativa$/i.test(t) ? 't-sativa' : 't-hybrid';
 const typeFilter = p => {
   if (!S.type) return true;
@@ -361,7 +365,31 @@ function filterBar(kind) {
   if (kind === 'flavors') h += `<label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Tastes: Bad Breath, Kiwi, Onions..." aria-label="Search the tasting notes" autocomplete="off"></label>`;
   return h + '</div>';
 }
-const empty = (title, msg) => `<div class="empty"><b>${title}</b>${msg}</div>`;
+const empty = (title, msg) => `<div class="empty"><b>${title}</b>${msg}${didYouMean()}</div>`;
+// "Did you mean" for typos (bluberry -> blueberry, runts -> runtz)
+const VOCAB = [...new Set(products.concat([]).flatMap(p => [p.name, p.collab]).concat(drops.flatMap(d => [d.shop, d.city]))
+  .flatMap(x => norm(x || '').split(/[^a-z0-9]+/)).filter(w => w.length >= 3))];
+function lev(a, b) {
+  const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[m][n];
+}
+function didYouMean() {
+  const t = terms(); if (!t.length) return '';
+  let changed = false;
+  const fixed = t.map(x => {
+    if (x.length < 3 || VOCAB.some(w => w.startsWith(x))) return x;
+    let best = null, bd = (x.length >= 6 ? 2 : 1) + 1;
+    for (const w of VOCAB) {
+      const dd = Math.min(lev(x, w), w.length > x.length ? lev(x, w.slice(0, x.length)) : 99);
+      if (dd < bd || (dd === bd && best && w.length < best.length)) { bd = dd; best = w; }
+    }
+    if (best) { changed = true; return best; }
+    return x;
+  });
+  return changed ? `<p class="hint">Did you mean <button data-try="${esc(fixed.join(' '))}">${esc(fixed.join(' '))}</button>?</p>` : '';
+}
 const suggest = `<p class="hint">Try: ${['mango', 'cherry', 'gas', 'candy', 'Pearl Pharma', 'San Diego'].map(x => `<button data-try="${x}">${x}</button>`).join('')}</p>`;
 
 /* ---------- views ---------- */
@@ -369,13 +397,15 @@ function viewWeek() {
   const t = terms();
   const newP = (R.newFlavors[latest] || []).map(id => products[id]).filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p));
   const wkDrops = drops.filter(d => d.week === latest && cityFilter(d) &&
-    (!t.length || t.every(x => d.hay.includes(x)) || d.ids.some(id => matchP(products[id], t))));
+    (!t.length || hits(d.hay, t) || d.ids.some(id => matchP(products[id], t))));
   const shops = new Set(wkDrops.map(d => d.shop + d.city)).size;
   let h = filterBar('week');
   h += `<div class="sec-title"><h2>New flavors <span>· week of ${fmt(latest)}</span></h2><small>${newP.length} new</small></div>`;
   h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
   h += `<div class="sec-title"><h2>New Drops <span>for This Week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
-  h += wkDrops.length ? `<div class="grid two">${wkDrops.map(d => storeCard(storeMap.get(d.shop + '|' + d.city), d)).join('')}</div>`
+  const shown = S.allStores ? wkDrops : wkDrops.slice(0, 12);
+  if (wkDrops.length) h += `<p class="hint">Looking for your shop? Type its name or city in the search bar.</p>`;
+  h += wkDrops.length ? `<div class="grid two">${shown.map(d => storeCard(storeMap.get(d.shop + '|' + d.city), d)).join('')}</div>` + (wkDrops.length > shown.length ? `<button class="more-btn" data-allstores>Show all ${wkDrops.length} stores</button>` : '')
     : empty('No stores found this week', 'Try the All Time tab for earlier drops.');
   return h;
 }
@@ -385,7 +415,7 @@ function viewFlavors() {
   // tasting-notes search: comma-separated tastes match ANY; words inside one taste must all appear
   const tastes = S.tq.split(',').map(x => norm(x).split(/\s+/).filter(Boolean)).filter(x => x.length);
   const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm(p.notes || '').includes(w)));
-  let list = live.filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p));
+  let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
@@ -448,7 +478,7 @@ function viewAll() {
   const hit = d => {
     const flav = d.ids.some(id => ok(products[id]));
     if (!t.length) return !filtering || flav;
-    const storeTxt = t.every(x => d.hay.includes(x));
+    const storeTxt = hits(d.hay, t);
     return (S.type || S.collab) ? flav || (storeTxt && d.ids.some(id => typeFilter(products[id]) && collabFilter(products[id]))) : storeTxt || flav;
   };
   let h = filterBar('all');
@@ -484,18 +514,24 @@ function render() {
   $('#view').innerHTML = view();
   $('#fotw').innerHTML = S.q ? '' : weekPicksBlock();
   const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
-  history.replaceState(null, '', p.toString() ? '#' + p : location.pathname + location.search);
+  const url = p.toString() ? '#' + p : location.pathname + location.search;
+  if (S.push) { history.pushState(null, '', url); S.push = false; } else history.replaceState(null, '', url);
 }
+window.addEventListener('popstate', () => {
+  const hp = new URLSearchParams(location.hash.slice(1));
+  S.tab = hp.get('tab') || 'week'; S.q = hp.get('q') || ''; qEl.value = S.q; render();
+});
 
 const qEl = $('#q'); qEl.value = S.q;
 let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
 $('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
-$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; render(); window.scrollTo({ top: $('.controls').getBoundingClientRect().top + scrollY, behavior: 'smooth' }); });
+$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; S.push = true; render(); window.scrollTo({ top: $('.controls').getBoundingClientRect().top + scrollY, behavior: 'smooth' }); });
 
 function onViewClick(e) {
   const el = e.target.closest('button'); if (!el) return;
   const ds = el.dataset;
   if (ds.fav) { const p = products[ds.fav], k = favKey(p); favs.has(k) ? favs.delete(k) : favs.add(k); store.set('flavorade-favs', [...favs]); render(); }
+  else if (ds.allstores !== undefined) { S.allStores = true; render(); }
   else if (ds.pick) { S.pick = ds.pick; render(); }
   else if (ds.toggle) { const i = +ds.toggle; S.open.has(i) ? S.open.delete(i) : S.open.add(i); render(); }
   else if (ds.all) { S['all' + ds.all] = true; render(); }
@@ -504,7 +540,7 @@ function onViewClick(e) {
   else if (ds.try) { S.q = ds.try; qEl.value = S.q; render(); }
   else if (ds.goto) {
     const p = products[ds.goto];
-    S.tab = 'flavors'; S.q = p.name; qEl.value = p.name; S.type = ''; S.collab = ''; S.open.add(p.i); render();
+    S.tab = 'flavors'; S.q = p.name; qEl.value = p.name; S.type = ''; S.collab = ''; S.open.add(p.i); S.push = true; render();
     const card = document.querySelector(`[data-p="${p.i}"]`); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }

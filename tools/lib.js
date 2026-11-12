@@ -81,4 +81,25 @@ function groupDeliveries(orders) {
   }
   return weeks;
 }
-module.exports = { ROOT, norm, fixCollab, parseProduct, caDate, releaseWeek, cityFromAddress, readOrders, groupDeliveries, loadData, saveData };
+// Deals from the "Current - 2026" tab of the deals sheet -> (shop, city) => deal text
+function dealFinder(sheet) {
+  const norm = module.exports.norm;
+  const vals = Array.isArray(sheet) ? sheet : sheet.values;
+  const rowsD = vals.slice(1).filter(r => /flavorade/i.test(r[1] || '') && String(r[7]).toUpperCase() === 'TRUE' && (r[4] || '').trim());
+  const ALIAS = { offthechartsotc: 'otc', offthecharts: 'otc', hpcoxnard: 'cannable', hpc: 'cannable', stiiizy: 'allstiiizyshops' };
+  const chainLoc = s => /\ball\b|over|norcal|northern california|locations/i.test(s);
+  const rk = r => { let k = norm(String(r[2]).replace(/\(.*?\)/g, '').replace(/\b(all|shops)\b/gi, '')); return ALIAS[k] || ALIAS[norm(r[2])] || k; };
+  const nameMatch = (r, shop) => { const k = rk(r), s = norm(shop); return k && (s.startsWith(k) || k.startsWith(s) || (k === 'allstiiizyshops' && s.includes('stiiizy'))); };
+  const isChain = r => chainLoc(r[3] || '') || /\b(all|shops)\b/i.test(r[2]);
+  return (shop, city) => {
+    const c = norm(city), cand = rowsD.filter(r => nameMatch(r, shop));
+    const loc = r => { const l = norm(r[3] || ''); return l && (l.includes(c) || c.includes(l)); };
+    const spec = cand.filter(r => !isChain(r));
+    const pick = spec.find(loc)
+      || (spec.length === 1 && rowsD.filter(x => rk(x) === rk(spec[0])).length === 1 ? spec[0] : null)
+      || cand.find(isChain);
+    return pick ? String(pick[4]).replace(/\s+/g, ' ').trim() : '';
+  };
+}
+
+module.exports = { dealFinder, ROOT, norm, fixCollab, parseProduct, caDate, releaseWeek, cityFromAddress, readOrders, groupDeliveries, loadData, saveData };
