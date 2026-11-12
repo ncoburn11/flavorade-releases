@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flavorade Release Finder</title>
+<meta name="description" content="Find this week's Flavorade drops, search flavors by taste, and see which stores just got them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,500&display=swap">
+<style>
+/* Matches flavoradeextracts.com: dark purple page, purple ticker, yellow accents, Montserrat caps */
+:root{
+  --bg:#301252; --panel:#3b1a63; --panel-2:#45206f; --ticker:#841eae; --btn:#ba4bc9; --btn-h:#a43bb3;
+  --yellow:#ffd93d; --lav:#c58fde; --gray:#dadada; --ink:#fff; --line:rgba(197,143,222,.24);
+  --head:Montserrat,"Helvetica Neue",Arial,sans-serif;
+  --body:"Proxima Nova","DM Sans","Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+/* drop ticker (same as the homepage marquee) */
+.ticker{background:var(--ticker);overflow:hidden;white-space:nowrap}
+.ticker .track{display:inline-flex;align-items:center;gap:28px;padding:10px 0;animation:tick 32s linear infinite}
+.ticker span{font:700 15px/1 var(--head);letter-spacing:.08em;color:var(--yellow)}
+.ticker img{height:26px;width:auto;display:block}
+@keyframes tick{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker .track{animation:none}}
+/* hero (same pattern as "THE BEST / CURED RESIN.") */
+.hero{text-align:center;padding:34px 0 22px}
+.eyebrow{font:700 clamp(15px,3.6vw,20px)/1.2 var(--head);letter-spacing:.05em;color:var(--gray);margin:0;text-transform:uppercase}
+.hero h1{font:800 clamp(34px,9vw,58px)/1.02 var(--head);letter-spacing:.04em;text-transform:uppercase;margin:10px 0 0}
+.hero h1 span{display:block}
+.hero h1 span+span{color:var(--yellow)}
+.hero p.sub{margin:12px 0 0;font-style:italic;color:var(--lav);font-size:17px}
+.hero p.sub b{font-style:normal;color:#fff}
+/* sticky controls */
+.controls{position:sticky;top:0;z-index:10;background:rgba(48,18,82,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.controls .wrap{padding-top:12px;padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.search{position:relative}
+.search input{width:100%;font:inherit;font-size:17px;padding:13px 46px;border-radius:30px;border:1.5px solid var(--line);background:rgba(255,255,255,.07);color:#fff;outline:none}
+.search input::placeholder{color:var(--lav)}
+.search input:focus{border-color:var(--yellow);background:rgba(255,255,255,.1)}
+.search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--lav)}
+.search .clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.12);border-radius:999px;width:34px;height:34px;font-size:18px;line-height:1;display:none;color:#fff}
+.search.has .clear{display:block}
+.search input::-webkit-search-cancel-button{display:none}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tabs button{border:1.5px solid var(--line);border-radius:5px;padding:9px 2px;background:transparent;color:#fff;font:700 12.5px/1.2 var(--head);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.tabs button[aria-selected=true]{background:var(--btn);border-color:var(--btn)}
+.tabs .count{color:var(--yellow)}
+/* filters */
+.filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--line);background:transparent;border-radius:30px;padding:7px 14px;font:600 13px/1.3 var(--head);letter-spacing:.03em;color:#fff}
+.chip[aria-pressed=true]{background:var(--yellow);border-color:var(--yellow);color:var(--bg)}
+select.chip{appearance:none;-webkit-appearance:none;padding-right:32px;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c58fde' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center}
+select.chip option{background:var(--bg);color:#fff}
+/* sections */
+main{padding-bottom:44px}
+.sec-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:26px 0 12px}
+.sec-title h2{font:800 clamp(19px,4.6vw,24px)/1.15 var(--head);letter-spacing:.05em;text-transform:uppercase;margin:0}
+.sec-title h2 span{color:var(--yellow)}
+.sec-title small{color:var(--lav);font-size:13px;text-align:right}
+.grid{display:grid;gap:10px}
+@media(min-width:640px){.grid.two{grid-template-columns:1fr 1fr}}
+/* flavor card */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.fl-head{display:flex;gap:12px;align-items:flex-start;padding:14px 12px 14px 15px;width:100%;text-align:left;background:none;border:0}
+.fl-main{flex:1;min-width:0}
+.fl-name{font:700 17px/1.2 var(--head);letter-spacing:.02em}
+.fl-by{font-size:13px;color:var(--lav);margin-top:2px}
+.fl-notes{margin-top:7px;font-size:15.5px;color:#f3e9fb}
+.fl-notes:before{content:"👅 "}
+.fl-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;align-items:center}
+.pill{display:inline-flex;align-items:center;font:700 11.5px/1 var(--head);letter-spacing:.05em;text-transform:uppercase;border-radius:30px;padding:5px 10px;white-space:nowrap}
+.pill.new{background:var(--yellow);color:var(--bg)}
+.pill.t-indica{background:rgba(186,75,201,.28);color:#f0c4f6}
+.pill.t-sativa{background:rgba(255,217,61,.16);color:var(--yellow)}
+.pill.t-hybrid{background:rgba(120,224,182,.15);color:#93f0c8}
+.pill.where{background:none;color:var(--lav);font:500 13px/1.3 var(--body);letter-spacing:0;text-transform:none;padding-left:0}
+.fav{flex:none;border:0;background:none;width:40px;height:40px;margin:-6px -4px 0 0;border-radius:999px;display:grid;place-items:center}
+.fav svg{width:24px;height:24px;fill:none;stroke:var(--lav);stroke-width:2}
+.fav[aria-pressed=true] svg{fill:var(--yellow);stroke:var(--yellow)}
+.fl-more{display:none;border-top:1px solid var(--line);padding:10px 15px 15px;background:rgba(0,0,0,.14)}
+.card.open .fl-more{display:block}
+.fl-more h4{margin:4px 0 6px;font:700 12px/1 var(--head);text-transform:uppercase;letter-spacing:.08em;color:var(--lav)}
+.wk{margin:10px 0 2px;font:700 13px/1.2 var(--head);letter-spacing:.04em;color:var(--yellow)}
+.loc{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
+.loc:last-child{border-bottom:0}
+.loc .city{color:var(--lav);font-size:13px}
+.loc .deal{flex:none;max-width:48%;text-align:right;font-size:12.5px;font-weight:700;color:var(--yellow)}
+.toggle-more{border:0;background:none;color:var(--yellow);font:700 13px var(--head);letter-spacing:.04em;padding:10px 0 0;text-transform:uppercase}
+.caret{flex:none;color:var(--lav);transition:transform .2s;margin-top:2px}
+.card.open .caret{transform:rotate(180deg)}
+/* store card */
+.st{padding:14px 15px}
+.st-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.st-name{font:700 17px/1.2 var(--head);letter-spacing:.02em}
+.st-city{font-size:13px;color:var(--lav)}
+.st-date{flex:none;font:700 11px/1 var(--head);letter-spacing:.05em;text-transform:uppercase;color:var(--bg);background:var(--lav);border-radius:30px;padding:5px 9px}
+.deal-b{display:inline-block;margin-top:9px;font-size:13px;font-weight:700;color:var(--yellow);border:1px solid rgba(255,217,61,.45);border-radius:5px;padding:4px 9px}
+.flist{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.flist button{border:1px solid var(--line);background:var(--panel-2);border-radius:30px;padding:6px 12px;font-size:13.5px;font-weight:500;color:#fff}
+.flist button:hover{border-color:var(--lav)}
+.flist button.hit{border-color:var(--yellow);background:rgba(255,217,61,.14)}
+.flist button.isnew:after{content:" NEW";font:800 10px var(--head);letter-spacing:.06em;color:var(--yellow)}
+.st-hist{margin-top:10px;font-size:13px;color:var(--lav)}
+/* misc */
+.empty{text-align:center;color:var(--lav);padding:40px 10px}
+.empty b{display:block;color:#fff;font:700 18px var(--head);margin-bottom:6px}
+.more-btn{display:flex;align-items:center;gap:8px;margin:18px auto 0;border:0;background:var(--btn);color:#fff;font:700 14px var(--head);letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:13px 24px}
+.more-btn:hover{background:var(--btn-h)}
+.hint{font-size:13px;color:var(--lav);margin:10px 0 0}
+.hint button{border:1px solid var(--line);background:transparent;border-radius:30px;padding:3px 11px;margin:2px;font-size:13px;color:#fff}
+footer{border-top:1px solid var(--line);color:var(--lav);font-size:13px;text-align:center;padding:22px 16px 30px}
+footer p{margin:4px 0}
+footer b{color:#fff}
+mark{background:rgba(255,217,61,.32);color:#fff;border-radius:3px;padding:0 1px}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="ticker" aria-label="New flavors dropping every Monday">
+  <div class="track" id="ticker"></div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Flavorade Releases</p>
+    <h1><span>This Week's</span><span>Drops.</span></h1>
+    <p class="sub">Search any flavor, taste, or store. <b id="updated"></b></p>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <label class="search" id="searchBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Try “mango”, “gas”, or “San Diego”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, tastes, or stores">
+      <button class="clear" type="button" aria-label="Clear search">×</button>
+    </label>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="week">This Week</button>
+      <button role="tab" data-tab="flavors">Flavors</button>
+      <button role="tab" data-tab="stores">Stores</button>
+      <button role="tab" data-tab="saved">♥ Saved <span class="count" id="favCount"></span></button>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap" id="view" aria-live="polite"></main>
+
+<footer>
+  <p><b>Drop dates are subject to change.</b> Please check the retailer's menu or call ahead.</p>
+  <p>Limited quantities. Products may sell out quickly. For adults 21+ only.</p>
+</footer>
+
+<script src="data.js"></script>
+<script>
+(() => {
+const R = window.RELEASES;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmt = w => { const [, m, d] = w.split('-'); return MONTHS[+m - 1] + ' ' + (+d); };
+
+/* ---------- model ---------- */
+const products = R.products.map(([name, collab, type, notes], i) => ({
+  i, name, collab, type, notes, drops: [], firstNew: null,
+  hay: norm([name, collab, type, notes, collab ? 'x ' + collab : 'flavorade'].join(' '))
+}));
+const drops = R.drops.map(([week, shop, city, deal, ids], i) => {
+  const d = { i, week, shop, city, deal, ids, hay: norm([shop, city, deal].join(' ')) };
+  ids.forEach(id => products[id].drops.push(d));
+  return d;
+});
+const weeks = [...new Set(drops.map(d => d.week).concat(Object.keys(R.newFlavors)))].sort().reverse();
+const latest = weeks[0];
+Object.keys(R.newFlavors).sort().forEach(w => R.newFlavors[w].forEach(id => { if (!products[id].firstNew) products[id].firstNew = w; }));
+products.forEach(p => {
+  p.drops.sort((a, b) => b.week.localeCompare(a.week));
+  p.last = p.drops[0] ? p.drops[0].week : (p.firstNew || '');
+  p.isNew = (R.newFlavors[latest] || []).includes(p.i);
+  p.recentStores = new Set(p.drops.filter(d => d.week >= weeks[Math.min(3, weeks.length - 1)]).map(d => d.shop + '|' + d.city)).size;
+});
+// stores: unique shop+city, newest drop first
+const storeMap = new Map();
+drops.forEach(d => {
+  const k = d.shop + '|' + d.city;
+  if (!storeMap.has(k)) storeMap.set(k, { shop: d.shop, city: d.city, drops: [] });
+  storeMap.get(k).drops.push(d);
+});
+const stores = [...storeMap.values()].map(s => (s.drops.sort((a, b) => b.week.localeCompare(a.week)), s.latest = s.drops[0], s))
+  .sort((a, b) => b.latest.week.localeCompare(a.latest.week) || a.shop.localeCompare(b.shop));
+const cities = [...new Set(stores.map(s => s.city).filter(Boolean))].sort();
+const collabs = [...new Set(products.map(p => p.collab || 'Flavorade'))].sort((a, b) => a === 'Flavorade' ? -1 : b === 'Flavorade' ? 1 : a.localeCompare(b));
+
+$('#updated').textContent = 'Updated for the week of ' + fmt(latest) + '.';
+{ const logo = 'https://images.squarespace-cdn.com/content/64e52cbc6169f2457a2eed79/1120bc5d-60f0-4a1e-89fd-e1c0bdd4ef77/Flavorade+Logo+%28Drool%29.png?content-type=image%2Fpng';
+  const unit = `<span>NEW FLAVORS DROPPING EVERY MONDAY</span><img src="${logo}" alt="">`;
+  $('#ticker').innerHTML = unit.repeat(8); }
+
+/* ---------- state ---------- */
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const favKey = p => (p.collab + '|' + p.name).toLowerCase();
+let favs = new Set(store.get('flavorade-favs', []));
+const S = { tab: 'week', q: '', type: '', collab: '', city: store.get('flavorade-city', ''), sort: 'new', limit: 40, open: new Set() };
+const params = new URLSearchParams(location.hash.slice(1));
+if (params.get('tab')) S.tab = params.get('tab');
+if (params.get('q')) S.q = params.get('q');
+
+/* ---------- helpers ---------- */
+const terms = () => norm(S.q).split(/\s+/).filter(Boolean);
+const matchP = (p, t) => t.every(x => p.hay.includes(x));
+const typeClass = t => /^indica$/i.test(t) ? 't-indica' : /^sativa$/i.test(t) ? 't-sativa' : 't-hybrid';
+const typeFilter = p => {
+  if (!S.type) return true;
+  if (S.type === 'Indica') return /^Indica/.test(p.type);
+  if (S.type === 'Sativa') return /^Sativa/.test(p.type);
+  return /Hybrid/.test(p.type);
+};
+const collabFilter = p => !S.collab || (p.collab || 'Flavorade') === S.collab;
+const cityFilter = d => !S.city || d.city === S.city;
+function hl(text) {
+  const t = terms(); if (!t.length) return esc(text);
+  let out = esc(text);
+  t.forEach(x => { if (x.length < 2) return; out = out.replace(new RegExp('(' + x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); });
+  return out;
+}
+const heart = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
+const caret = '<svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>';
+
+function flavorCard(p) {
+  const open = S.open.has(p.i);
+  const by = p.collab ? 'Flavorade × ' + p.collab : 'Flavorade';
+  const recent = p.drops.filter(cityFilter);
+  const where = recent.length
+    ? `Last drop ${fmt(recent[0].week)} · ${p.recentStores || recent.length} store${(p.recentStores || recent.length) === 1 ? '' : 's'} lately`
+    : (S.city ? 'Not dropped in ' + esc(S.city) + ' yet' : 'Coming soon');
+  let more = '';
+  if (open) {
+    const max = S['all' + p.i] ? 999 : 12;
+    let lastW = '', rows = '';
+    recent.slice(0, max).forEach(d => {
+      if (d.week !== lastW) { rows += `<div class="wk">Week of ${fmt(d.week)}${d.week === latest ? ' · this week' : ''}</div>`; lastW = d.week; }
+      rows += `<div class="loc"><div><div>${esc(d.shop)}</div><div class="city">${esc(d.city)}</div></div>${d.deal ? `<div class="deal">${esc(d.deal)}</div>` : ''}</div>`;
+    });
+    more = `<div class="fl-more"><h4>Where it dropped${S.city ? ' in ' + esc(S.city) : ''}</h4>${rows || '<div class="city">No store drops listed yet.</div>'}
+      ${recent.length > max ? `<button class="toggle-more" data-all="${p.i}">Show all ${recent.length} drops</button>` : ''}</div>`;
+  }
+  return `<article class="card${open ? ' open' : ''}" data-p="${p.i}">
+    <div style="display:flex">
+      <button class="fl-head" data-toggle="${p.i}" aria-expanded="${open}">
+        <div class="fl-main">
+          <div class="fl-name">${hl(p.name)}</div>
+          <div class="fl-by">${hl(by)}</div>
+          ${p.notes ? `<div class="fl-notes">${hl(p.notes)}</div>` : ''}
+          <div class="fl-meta">
+            ${p.isNew ? '<span class="pill new">NEW</span>' : ''}
+            ${p.type ? `<span class="pill ${typeClass(p.type)}">${esc(p.type)}</span>` : ''}
+            <span class="pill where">${where}</span>
+          </div>
+        </div>${caret}
+      </button>
+      <button class="fav" data-fav="${p.i}" aria-pressed="${favs.has(favKey(p))}" aria-label="Save ${esc(p.name)}">${heart}</button>
+    </div>${more}
+  </article>`;
+}
+
+function storeCard(s, d, opts = {}) {
+  const t = terms();
+  const chips = d.ids.map(id => products[id]).map(p =>
+    `<button data-goto="${p.i}" class="${p.isNew && d.week === latest ? 'isnew ' : ''}${t.length && matchP(p, t) ? 'hit' : ''}">${esc(p.name)}</button>`).join('');
+  const older = opts.history ? s.drops.filter(x => x !== d).slice(0, 3).map(x => fmt(x.week)).join(', ') : '';
+  return `<article class="card st">
+    <div class="st-top"><div><div class="st-name">${hl(s.shop)}</div><div class="st-city">${hl(s.city)}</div></div>
+    <span class="st-date">${d.week === latest ? 'This week' : 'Wk of ' + fmt(d.week)}</span></div>
+    ${d.deal ? `<span class="deal-b">🏷️ ${hl(d.deal)}</span>` : ''}
+    <div class="flist">${chips}</div>
+    ${older ? `<div class="st-hist">Earlier drops: ${older}</div>` : ''}
+  </article>`;
+}
+
+function filterBar(kind) {
+  const types = ['Indica', 'Hybrid', 'Sativa'];
+  let h = '<div class="filters">';
+  if (kind !== 'stores') {
+    h += types.map(t => `<button class="chip" data-type="${t}" aria-pressed="${S.type === t}">${t}</button>`).join('');
+    h += `<select class="chip" data-sel="collab" aria-label="Brand collab"><option value="">All collabs</option>${collabs.map(c => `<option${S.collab === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
+  }
+  h += `<select class="chip" data-sel="city" aria-label="City"><option value="">📍 All cities</option>${cities.map(c => `<option${S.city === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
+  if (kind === 'flavors') h += `<select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select>`;
+  return h + '</div>';
+}
+const empty = (title, msg) => `<div class="empty"><b>${title}</b>${msg}</div>`;
+const suggest = `<p class="hint">Try: ${['mango', 'cherry', 'gas', 'candy', 'Pearl Pharma', 'San Diego'].map(x => `<button data-try="${x}">${x}</button>`).join('')}</p>`;
+
+/* ---------- views ---------- */
+function viewWeek() {
+  const t = terms();
+  const newP = (R.newFlavors[latest] || []).map(id => products[id]).filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p));
+  const wkDrops = drops.filter(d => d.week === latest && cityFilter(d) &&
+    (!t.length || t.every(x => d.hay.includes(x)) || d.ids.some(id => matchP(products[id], t))));
+  const shops = new Set(wkDrops.map(d => d.shop + d.city)).size;
+  let h = filterBar('week');
+  h += `<div class="sec-title"><h2>New flavors <span>· week of ${fmt(latest)}</span></h2><small>${newP.length} new</small></div>`;
+  h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
+  h += `<div class="sec-title"><h2>Where to buy <span>this week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
+  h += wkDrops.length ? `<div class="grid two">${wkDrops.map(d => storeCard(storeMap.get(d.shop + '|' + d.city), d)).join('')}</div>`
+    : empty('No stores found', S.city ? 'No drops listed in ' + esc(S.city) + ' this week. Try the Stores tab for earlier drops.' : 'Try a different search.');
+  return h;
+}
+
+function viewFlavors() {
+  const t = terms();
+  let list = products.filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p) && (!S.city || p.drops.some(cityFilter)));
+  if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
+  else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
+  else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
+  let h = filterBar('flavors');
+  h += `<div class="sec-title"><h2>All flavors</h2><small>${list.length} of ${products.length}</small></div>`;
+  if (!t.length && !S.type && !S.collab && !S.city) h += suggest;
+  h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q) + '”', 'Search by name (Runtz), taste (mango, gas, candy), or collab (Bosky).');
+  if (list.length > S.limit) h += `<button class="more-btn" data-more>Show ${Math.min(40, list.length - S.limit)} more →</button>`;
+  return h;
+}
+
+function viewStores() {
+  const t = terms();
+  let list = stores.filter(s => (!S.city || s.city === S.city))
+    .map(s => {
+      if (!t.length) return [s, s.latest];
+      // newest drop at this store that matches the search (store name/city/deal OR a flavor it got)
+      const d = s.drops.find(d => t.every(x => d.hay.includes(x)) || d.ids.some(id => matchP(products[id], t)));
+      return d ? [s, d] : null;
+    }).filter(Boolean);
+  let h = filterBar('stores');
+  h += `<div class="sec-title"><h2>Stores</h2><small>${list.length} store${list.length === 1 ? '' : 's'} · newest drops first</small></div>`;
+  if (t.length) h += `<p class="hint">Showing each store's most recent drop matching “${esc(S.q)}”.</p>`;
+  h += list.length ? `<div class="grid two">${list.slice(0, S.limit).map(([s, d]) => storeCard(s, d, { history: !t.length })).join('')}</div>` : empty('No stores found', 'Try a city name like “Sac” or “San Diego”, or a flavor name.');
+  if (list.length > S.limit) h += `<button class="more-btn" data-more>Show more stores</button>`;
+  return h;
+}
+
+function viewSaved() {
+  const t = terms();
+  const list = products.filter(p => favs.has(favKey(p)) && matchP(p, t)).sort((a, b) => b.last.localeCompare(a.last));
+  let h = `<div class="sec-title"><h2>Your saved flavors</h2><small>Saved on this device</small></div>`;
+  h += list.length ? `<div class="grid">${list.map(flavorCard).join('')}</div>`
+    : empty('No saved flavors yet', 'Tap the ♡ on any flavor to save it here and see where it drops next.');
+  return h;
+}
+
+/* ---------- render ---------- */
+function render() {
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
+  $('#favCount').textContent = favs.size ? favs.size : '';
+  $('#searchBox').classList.toggle('has', !!S.q);
+  $('#view').innerHTML = { week: viewWeek, flavors: viewFlavors, stores: viewStores, saved: viewSaved }[S.tab]();
+  const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
+  history.replaceState(null, '', p.toString() ? '#' + p : location.pathname + location.search);
+}
+
+const qEl = $('#q'); qEl.value = S.q;
+let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
+$('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
+$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; render(); window.scrollTo({ top: $('.controls').offsetTop, behavior: 'smooth' }); });
+
+$('#view').addEventListener('click', e => {
+  const el = e.target.closest('button'); if (!el) return;
+  const ds = el.dataset;
+  if (ds.fav) { const p = products[ds.fav], k = favKey(p); favs.has(k) ? favs.delete(k) : favs.add(k); store.set('flavorade-favs', [...favs]); render(); }
+  else if (ds.toggle) { const i = +ds.toggle; S.open.has(i) ? S.open.delete(i) : S.open.add(i); render(); }
+  else if (ds.all) { S['all' + ds.all] = true; render(); }
+  else if (ds.type) { S.type = S.type === ds.type ? '' : ds.type; render(); }
+  else if (ds.more !== undefined) { S.limit += 40; render(); }
+  else if (ds.try) { S.q = ds.try; qEl.value = S.q; render(); }
+  else if (ds.goto) {
+    const p = products[ds.goto];
+    S.tab = 'flavors'; S.q = p.name; qEl.value = p.name; S.type = ''; S.collab = ''; S.open.add(p.i); render();
+    const card = document.querySelector(`[data-p="${p.i}"]`); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+$('#view').addEventListener('change', e => {
+  const k = e.target.dataset.sel; if (!k) return;
+  S[k] = e.target.value; S.limit = 40;
+  if (k === 'city') store.set('flavorade-city', S.city);
+  render();
+});
+
+render();
+
+/* Let a parent page (Squarespace) size the embed to fit. */
+if (window.parent !== window && 'ResizeObserver' in window) {
+  new ResizeObserver(() => parent.postMessage({ flavoradeHeight: document.documentElement.scrollHeight }, '*')).observe(document.body);
+}
+})();
+</script>
+</body>
+</html>

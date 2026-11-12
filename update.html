@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Release Finder Update</title>
+<style>
+:root{--purple:#673091;--deep:#3a1458;--orange:#f2a41d;--line:#e4d7ee;--muted:#6c5a7c;color-scheme:light}
+body{margin:0;background:#f5eff9;color:#22102f;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+h1{color:var(--purple);margin:0 0 4px}
+ol{padding-left:20px}
+textarea{width:100%;min-height:220px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;border:1.5px solid var(--line);border-radius:10px;padding:10px}
+button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:11px 22px;background:var(--purple);color:#fff;cursor:pointer}
+button.alt{background:var(--orange);color:var(--deep)}
+.box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+td input,td select{width:100%;font:inherit;padding:5px;border:1px solid var(--line);border-radius:6px}
+.ok{color:#11663f;font-weight:700}.warn{color:#9a5200;font-weight:700}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Weekly update</h1>
+  <p>Adds a new week to the Release Finder. Nothing here is public until you upload the new <code>data.js</code>.</p>
+  <ol>
+    <li>Paste this week's lines below, in the <b>same format as the old Squarespace code</b>: the <code>NEW FLAVORS</code> line and every store line (<code>{ id: '...', name: '...', dropDate: '...', flavors: [...] },</code>). Extra text around them is ignored.</li>
+    <li>Click <b>Check</b>, then fill in type and tasting notes for any flavor the site hasn't seen before.</li>
+    <li>Click <b>Download data.js</b> and upload it to the <code>flavorade-releases</code> GitHub repo, replacing the old file. The site updates within a minute or two.</li>
+  </ol>
+  <textarea id="paste" placeholder="{ id: 'NEW FLAVORS111626', name: 'New Flavors Week of 11/16/26', dropDate: 'Week of November 16th', flavors: ['Flavorade x Wizard Trees | Black Magic | Vape Cart | 1g'] },
+{ id: 'Cake House | Vista111626', name: 'Cake House | Vista 11/16/26', dropDate: 'Week of November 16th', flavors: ['Flavorade | Super Boof | Vape Cart | 1g'] },"></textarea>
+  <p><button id="check">Check</button></p>
+  <div id="out"></div>
+</div>
+<script src="data.js"></script>
+<script>
+const R = window.RELEASES;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
+const MON = {January:1,February:2,March:3,April:4,May:5,June:6,July:7,August:8,September:9,October:10,November:11,December:12};
+const pad = n => String(n).padStart(2, '0');
+const COLLAB = {kushco:'Kush Co', lafamilyfarms:'LA Family Farms', preferredgardens:'Preferred Gardens'};
+const fixCollab = c => COLLAB[norm(c)] || c.trim();
+
+function weekOf(s) {
+  let m = s.name.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})\b/);
+  if (m) return `20${m[3]}-${pad(m[1])}-${pad(m[2])}`;
+  m = (s.dropDate || '').match(/(\w+) (\d+)/);
+  return m ? `${new Date().getFullYear()}-${pad(MON[m[1]])}-${pad(m[2])}` : null;
+}
+function parseFlavor(f) {
+  f = f.trim().replace(/^Flavorade - (?=Flavorade)/, '');
+  if (!f || /invoice note/i.test(f)) return null;
+  let p = f.split('|').map(x => x.trim());
+  if (p.length < 2) p = ['Flavorade', f];
+  if (!/^Flavorade/.test(p[0])) return null;
+  return { strain: p[1], collab: fixCollab((p[0].match(/^Flavorade x (.+)$/) || [])[1] || '') };
+}
+function parseEntries(text) {
+  const out = [], re = /\{\s*id\s*:[\s\S]*?\]\s*\}/g;
+  let m;
+  while ((m = re.exec(text))) { try { out.push(Function('return ' + m[0])()); } catch (e) { out.push({ error: m[0].slice(0, 80) }); } }
+  return out;
+}
+
+let pending = null;
+$('#check').onclick = () => {
+  const entries = parseEntries($('#paste').value);
+  const bad = entries.filter(e => e.error);
+  const good = entries.filter(e => !e.error);
+  if (!good.length) { $('#out').innerHTML = '<p class="warn">No store lines found. Paste lines that start with { id: …</p>'; return; }
+  const products = R.products.map(p => p.slice());
+  const index = new Map(products.map((p, i) => [norm(p[1]) + '|' + norm(p[0]), i]));
+  const byName = new Map(products.map(p => [norm(p[0]), p]));
+  const added = [];
+  const pid = f => {
+    const k = norm(f.collab) + '|' + norm(f.strain);
+    if (!index.has(k)) {
+      const known = byName.get(norm(f.strain));
+      index.set(k, products.length);
+      products.push([f.strain, f.collab, known ? known[2] : '', known ? known[3] : '']);
+      added.push(products.length - 1);
+    }
+    return index.get(k);
+  };
+  const newFlavors = { ...R.newFlavors }, drops = [];
+  const weeksSeen = new Set();
+  for (const s of good) {
+    const wk = weekOf(s); if (!wk) continue; weeksSeen.add(wk);
+    const ids = [...new Set((s.flavors || []).map(parseFlavor).filter(Boolean).map(pid))];
+    if (/^NEW FLAVORS/i.test(s.id)) { newFlavors[wk] = ids; continue; }
+    let [left, ...rest] = s.name.split(' - ');
+    left = left.replace(/\s*\d{1,2}\/\d{1,2}\/\d{2}\s*$/, '').replace(/\s+/g, ' ').trim();
+    const [shop, city] = left.split('|').map(x => (x || '').trim());
+    if (ids.length) drops.push([wk, shop, city || '', rest.join(' - ').replace(/\s+/g, ' ').trim(), ids]);
+  }
+  // replace any existing drops for the same weeks (so re-running is safe), newest first
+  const kept = R.drops.filter(d => !weeksSeen.has(d[0]));
+  pending = { products, newFlavors, drops: drops.concat(kept), added };
+
+  let h = `<div class="box"><p class="ok">Found ${drops.length} store drops for week(s): ${[...weeksSeen].join(', ')}.</p>`;
+  if (bad.length) h += `<p class="warn">${bad.length} line(s) couldn't be read and were skipped:</p><pre>${bad.map(b => esc(b.error)).join('\n')}</pre>`;
+  if (added.length) {
+    h += `<p><b>${added.length} flavor(s) the site hasn't seen before.</b> Add the type and tasting notes so customers can search them:</p><table><tr><th>Flavor</th><th>Type</th><th>Tasting notes</th></tr>`;
+    added.forEach(i => { const p = products[i];
+      h += `<tr><td>${esc(p[0])}<br><small>${esc(p[1] ? 'x ' + p[1] : 'Flavorade')}</small></td>
+      <td><select data-i="${i}" data-f="2">${['', 'Indica', 'Indica Hybrid', 'Hybrid', 'Sativa Hybrid', 'Sativa'].map(t => `<option${p[2] === t ? ' selected' : ''}>${t}</option>`).join('')}</select></td>
+      <td><input data-i="${i}" data-f="3" value="${esc(p[3])}" placeholder="e.g. Mango Sticky Rice & Gas"></td></tr>`; });
+    h += '</table>';
+  } else h += '<p>Every flavor already has tasting notes.</p>';
+  h += `<p><button class="alt" id="dl">Download data.js</button></p></div>`;
+  $('#out').innerHTML = h;
+  $('#out').oninput = e => { const t = e.target; if (t.dataset.i) pending.products[+t.dataset.i][+t.dataset.f] = t.value.trim(); };
+  $('#out').onchange = $('#out').oninput;
+  $('#dl').onclick = () => {
+    const data = { updated: new Date().toISOString().slice(0, 10), products: pending.products, newFlavors: pending.newFlavors, drops: pending.drops };
+    const js = `// Flavorade release data - updated with releases/update.html\n// products: [strain, collaborator, type, tasting notes]\n// newFlavors: { weekStart: [product index, ...] }\n// drops: [weekStart, shop, city, deal, [product index, ...]]\nwindow.RELEASES = ${JSON.stringify(data)};\n`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([js], { type: 'text/javascript' }));
+    a.download = 'data.js'; a.click();
+  };
+};
+</script>
+</body>
+</html>
