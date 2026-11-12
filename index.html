@@ -342,7 +342,7 @@ function viewWeek() {
   let h = filterBar('week');
   h += `<div class="sec-title"><h2>New flavors <span>· week of ${fmt(latest)}</span></h2><small>${newP.length} new</small></div>`;
   h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
-  h += `<div class="sec-title"><h2>Where to buy <span>this week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
+  h += `<div class="sec-title"><h2>New Drops <span>for This Week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
   h += wkDrops.length ? `<div class="grid two">${wkDrops.map(d => storeCard(storeMap.get(d.shop + '|' + d.city), d)).join('')}</div>`
     : empty('No stores found this week', 'Try the All Time tab for earlier drops.');
   return h;

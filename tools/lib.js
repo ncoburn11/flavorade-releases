@@ -68,6 +68,7 @@ function groupDeliveries(orders) {
   const weeks = new Map();
   for (const o of orders) {
     if (SKIP_STAGES.has(o.stage) || !o.vendor || !o.transferDate) continue;
+    if (new Date(o.transferDate) > new Date()) continue; // scheduled/future transfers stay hidden until they happen
     const wk = releaseWeek(o.transferDate);
     const flavors = (o.lineItems || []).map(li => parseProduct(li.product && li.product.name)).filter(Boolean);
     if (!flavors.length) continue;
