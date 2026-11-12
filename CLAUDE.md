@@ -38,4 +38,9 @@ When asked to "update releases" (or when the Monday scheduled task fires), do th
    `tools/last-report.md` and push to `main`. GitHub Pages republishes in about a minute.
 8. **Summarize for the owner:** the new flavors, the number of stores, any unnamed stores, and any missing notes.
 
+**Nick's Favorite Flavors** live in `picks.js` (a list of flavor names). Edit it only when the owner names picks.
+A pick shows on the All Time tab while it has dropped in the past 4 weeks.
+
+The page only shows the last 6 months of drops; older data stays in `data.js`.
+
 Data format is documented at the top of `data.js`. `index.html` needs no changes for a weekly update.

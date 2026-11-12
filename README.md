@@ -39,4 +39,6 @@ To run it any other time, tell Claude "update releases". The full procedure is i
 - `stores.json` maps each GrowFlow license to the store name, city, and deal customers see. To rename a store or change a deal, edit it there or tell Claude.
 - A store missing from `stores.json` is held back and listed in `tools/last-report.md` until it has a name.
 
+- **Nick's Favorite Flavors:** edit `picks.js` on GitHub (pencil icon → add flavor names → Commit), or tell Claude your picks. They show at the top of the All Time tab while they've dropped in the past 4 weeks.
+
 You never have to touch Squarespace again; the page picks up the new week on its own.

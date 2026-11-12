@@ -108,6 +108,20 @@ main{padding-bottom:44px}
 .flist button.hit{border-color:var(--yellow);background:rgba(255,217,61,.14)}
 .flist button.isnew:after{content:" NEW";font:800 10px var(--head);letter-spacing:.06em;color:var(--yellow)}
 .st-hist{margin-top:10px;font-size:13px;color:var(--lav)}
+.wkb{border:1px solid var(--line);border-radius:12px;margin:0 0 10px;background:var(--panel)}
+.wkb>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 15px}
+.wkb>summary::-webkit-details-marker{display:none}
+.wkb>summary h3{margin:0;font:800 16px/1.2 var(--head);letter-spacing:.05em;text-transform:uppercase}
+.wkb>summary h3 span{color:var(--yellow)}
+.wkb>summary small{color:var(--lav);font-size:13px;white-space:nowrap}
+.wkb[open]>summary .caret{transform:rotate(180deg)}
+.wkb .rows{padding:0 15px 8px}
+.drow{border-top:1px solid var(--line);padding:12px 0}
+.drow .st-name{font-size:15.5px}
+.drow .deal-b{margin-top:6px;font-size:12px}
+.drow .flist{margin-top:8px}
+.picks{border:2px solid var(--yellow);border-radius:14px;padding:4px 14px 14px;margin-top:22px;background:rgba(255,217,61,.06)}
+.picks .sec-title{margin-top:14px}
 /* misc */
 .empty{text-align:center;color:var(--lav);padding:40px 10px}
 .empty b{display:block;color:#fff;font:700 18px var(--head);margin-bottom:6px}
@@ -145,7 +159,7 @@ mark{background:none;color:#ffd93d;text-decoration:underline;text-decoration-thi
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="week">This Week</button>
       <button role="tab" data-tab="flavors">Flavors</button>
-      <button role="tab" data-tab="stores">Stores</button>
+      <button role="tab" data-tab="all">All Time</button>
       <button role="tab" data-tab="saved">♥ Saved <span class="count" id="favCount"></span></button>
     </nav>
   </div>
@@ -159,6 +173,7 @@ mark{background:none;color:#ffd93d;text-decoration:underline;text-decoration-thi
 </footer>
 
 <script src="data.js"></script>
+<script src="picks.js"></script>
 <script>
 (() => {
 const R = window.RELEASES;
@@ -173,12 +188,16 @@ const products = R.products.map(([name, collab, type, notes], i) => ({
   i, name, collab, type, notes, drops: [], firstNew: null,
   hay: norm([name, collab, type, notes, collab ? 'x ' + collab : 'flavorade'].join(' '))
 }));
-const drops = R.drops.map(([week, shop, city, deal, ids], i) => {
+const allWeeks = R.drops.map(d => d[0]).sort();
+const newestWeek = allWeeks[allWeeks.length - 1] || '';
+const addDays = (w, n) => { const d = new Date(w + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const CUTOFF = newestWeek ? addDays(newestWeek, -182) : '';   // show 6 months of drops
+const drops = R.drops.filter(d => d[0] >= CUTOFF).map(([week, shop, city, deal, ids], i) => {
   const d = { i, week, shop, city, deal, ids, hay: norm([shop, city, deal].join(' ')) };
   ids.forEach(id => products[id].drops.push(d));
   return d;
 });
-const weeks = [...new Set(drops.map(d => d.week).concat(Object.keys(R.newFlavors)))].sort().reverse();
+const weeks = [...new Set(drops.map(d => d.week).concat(Object.keys(R.newFlavors).filter(w => w >= CUTOFF)))].sort().reverse();
 const latest = weeks[0];
 Object.keys(R.newFlavors).sort().forEach(w => R.newFlavors[w].forEach(id => { if (!products[id].firstNew) products[id].firstNew = w; }));
 products.forEach(p => {
@@ -196,8 +215,14 @@ drops.forEach(d => {
 });
 const stores = [...storeMap.values()].map(s => (s.drops.sort((a, b) => b.week.localeCompare(a.week)), s.latest = s.drops[0], s))
   .sort((a, b) => b.latest.week.localeCompare(a.latest.week) || a.shop.localeCompare(b.shop));
-const cities = [...new Set(stores.map(s => s.city).filter(Boolean))].sort();
-const collabs = [...new Set(products.map(p => p.collab || 'Flavorade'))].sort((a, b) => a === 'Flavorade' ? -1 : b === 'Flavorade' ? 1 : a.localeCompare(b));
+const live = products.filter(p => p.drops.length || (p.firstNew && p.firstNew >= CUTOFF));
+const FOUR_WK = weeks[Math.min(3, weeks.length - 1)];
+const picks = (window.NICKS_PICKS || []).map(x => {
+  const [name, collab] = String(x).split('|').map(s => s.trim());
+  return live.filter(p => norm(p.name) === norm(name) && (!collab || norm(p.collab) === norm(collab)))
+    .sort((a, b) => b.last.localeCompare(a.last))[0];
+}).filter(p => p && p.last >= FOUR_WK);
+const collabs = [...new Set(live.map(p => p.collab || 'Flavorade'))].sort((a, b) => a === 'Flavorade' ? -1 : b === 'Flavorade' ? 1 : a.localeCompare(b));
 
 $('#updated').textContent = 'Updated for the week of ' + fmt(latest) + '.';
 { const logo = 'https://images.squarespace-cdn.com/content/64e52cbc6169f2457a2eed79/1120bc5d-60f0-4a1e-89fd-e1c0bdd4ef77/Flavorade+Logo+%28Drool%29.png?content-type=image%2Fpng';
@@ -211,9 +236,9 @@ const store = {
 };
 const favKey = p => (p.collab + '|' + p.name).toLowerCase();
 let favs = new Set(store.get('flavorade-favs', []));
-const S = { tab: 'week', q: '', type: '', collab: '', city: store.get('flavorade-city', ''), sort: 'new', limit: 40, open: new Set() };
+const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set() };
 const params = new URLSearchParams(location.hash.slice(1));
-if (params.get('tab')) S.tab = params.get('tab');
+if (params.get('tab')) S.tab = params.get('tab') === 'stores' ? 'all' : params.get('tab');
 if (params.get('q')) S.q = params.get('q');
 
 /* ---------- helpers ---------- */
@@ -294,11 +319,10 @@ function storeCard(s, d, opts = {}) {
 function filterBar(kind) {
   const types = ['Indica', 'Hybrid', 'Sativa'];
   let h = '<div class="filters">';
-  if (kind !== 'stores') {
+  if (true) {
     h += types.map(t => `<button class="chip" data-type="${t}" aria-pressed="${S.type === t}">${t}</button>`).join('');
     h += `<select class="chip" data-sel="collab" aria-label="Brand collab"><option value="">All collabs</option>${collabs.map(c => `<option${S.collab === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
   }
-  h += `<select class="chip" data-sel="city" aria-label="City"><option value="">📍 All cities</option>${cities.map(c => `<option${S.city === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
   if (kind === 'flavors') h += `<select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select>`;
   return h + '</div>';
 }
@@ -317,44 +341,65 @@ function viewWeek() {
   h += newP.length ? `<div class="grid">${newP.map(flavorCard).join('')}</div>` : empty('No new flavors match', 'Clear your search or filters to see all of this week\'s drops.');
   h += `<div class="sec-title"><h2>Where to buy <span>this week</span></h2><small>${shops} store${shops === 1 ? '' : 's'}${S.city ? ' in ' + esc(S.city) : ''}</small></div>`;
   h += wkDrops.length ? `<div class="grid two">${wkDrops.map(d => storeCard(storeMap.get(d.shop + '|' + d.city), d)).join('')}</div>`
-    : empty('No stores found', S.city ? 'No drops listed in ' + esc(S.city) + ' this week. Try the Stores tab for earlier drops.' : 'Try a different search.');
+    : empty('No stores found this week', 'Try the All Time tab for earlier drops.');
   return h;
 }
 
 function viewFlavors() {
   const t = terms();
-  let list = products.filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p) && (!S.city || p.drops.some(cityFilter)));
+  let list = live.filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
   let h = filterBar('flavors');
-  h += `<div class="sec-title"><h2>All flavors</h2><small>${list.length} of ${products.length}</small></div>`;
+  h += `<div class="sec-title"><h2>All flavors</h2><small>${list.length} of ${live.length}</small></div>`;
   if (!t.length && !S.type && !S.collab && !S.city) h += suggest;
   h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q) + '”', 'Search by name (Runtz), taste (mango, gas, candy), or collab (Bosky).');
   if (list.length > S.limit) h += `<button class="more-btn" data-more>Show ${Math.min(40, list.length - S.limit)} more →</button>`;
   return h;
 }
 
-function viewStores() {
+function picksBlock() {
+  if (!picks.length) return '';
+  return `<section class="picks"><div class="sec-title"><h2>Nick's Favorite <span>Flavors</span></h2><small>Hand-picked · past 4 weeks</small></div>
+    <div class="grid">${picks.map(flavorCard).join('')}</div></section>`;
+}
+
+function dropRow(d) {
   const t = terms();
-  let list = stores.filter(s => (!S.city || s.city === S.city))
-    .map(s => {
-      if (!t.length) return [s, s.latest];
-      // newest drop at this store that matches the search (store name/city/deal OR a flavor it got)
-      const d = s.drops.find(d => t.every(x => d.hay.includes(x)) || d.ids.some(id => matchP(products[id], t)));
-      return d ? [s, d] : null;
-    }).filter(Boolean);
-  let h = filterBar('stores');
-  h += `<div class="sec-title"><h2>Stores</h2><small>${list.length} store${list.length === 1 ? '' : 's'} · newest drops first</small></div>`;
-  if (t.length) h += `<p class="hint">Showing each store's most recent drop matching “${esc(S.q)}”.</p>`;
-  h += list.length ? `<div class="grid two">${list.slice(0, S.limit).map(([s, d]) => storeCard(s, d, { history: !t.length })).join('')}</div>` : empty('No stores found', 'Try a city name like “Sac” or “San Diego”, or a flavor name.');
-  if (list.length > S.limit) h += `<button class="more-btn" data-more>Show more stores</button>`;
+  const chips = d.ids.map(id => products[id]).map(p =>
+    `<button data-goto="${p.i}" class="${p.firstNew === d.week ? 'isnew ' : ''}${t.length && matchP(p, t) ? 'hit' : ''}">${esc(p.name)}</button>`).join('');
+  return `<div class="drow"><div class="st-name">${hl(d.shop)}</div><div class="st-city">${hl(d.city)}</div>
+    ${d.deal ? `<span class="deal-b">🏷️ ${hl(d.deal)}</span>` : ''}<div class="flist">${chips}</div></div>`;
+}
+
+function viewAll() {
+  const t = terms(), filtering = t.length || S.type || S.collab;
+  const ok = p => matchP(p, t) && typeFilter(p) && collabFilter(p);
+  const hit = d => {
+    const flav = d.ids.some(id => ok(products[id]));
+    if (!t.length) return !filtering || flav;
+    const storeTxt = t.every(x => d.hay.includes(x));
+    return (S.type || S.collab) ? flav || (storeTxt && d.ids.some(id => typeFilter(products[id]) && collabFilter(products[id]))) : storeTxt || flav;
+  };
+  let h = picksBlock() + filterBar('all');
+  const shown = weeks.map(w => [w, drops.filter(d => d.week === w && hit(d))]).filter(([, ds]) => ds.length);
+  const total = shown.reduce((n, [, ds]) => n + ds.length, 0);
+  h += `<div class="sec-title"><h2>All Time <span>· last 6 months</span></h2><small>${total} drop${total === 1 ? '' : 's'} · newest first</small></div>`;
+  if (!shown.length) return h + empty('No drops found', 'Try a flavor (Black Magic), a taste (mango), a store, or a city.');
+  h += shown.map(([w, ds], n) => {
+    const isOpen = S.weeks.has(w) || (filtering ? n < 3 : n === 0);
+    const nNew = (R.newFlavors[w] || []).length;
+    return `<details class="wkb" data-week="${w}"${isOpen ? ' open' : ''}><summary><h3>Week of <span>${fmt(w)}</span>${w === latest ? ' · this week' : ''}</h3>
+      <small>${ds.length} store${ds.length === 1 ? '' : 's'}${nNew ? ' · ' + nNew + ' new' : ''}</small>${caret}</summary>
+      <div class="rows">${isOpen ? ds.map(dropRow).join('') : ''}</div></details>`;
+  }).join('');
   return h;
 }
 
 function viewSaved() {
   const t = terms();
-  const list = products.filter(p => favs.has(favKey(p)) && matchP(p, t)).sort((a, b) => b.last.localeCompare(a.last));
+  const list = live.filter(p => favs.has(favKey(p)) && matchP(p, t)).sort((a, b) => b.last.localeCompare(a.last));
   let h = `<div class="sec-title"><h2>Your saved flavors</h2><small>Saved on this device</small></div>`;
   h += list.length ? `<div class="grid">${list.map(flavorCard).join('')}</div>`
     : empty('No saved flavors yet', 'Tap the ♡ on any flavor to save it here and see where it drops next.');
@@ -366,7 +411,7 @@ function render() {
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
   $('#favCount').textContent = favs.size ? favs.size : '';
   $('#searchBox').classList.toggle('has', !!S.q);
-  $('#view').innerHTML = { week: viewWeek, flavors: viewFlavors, stores: viewStores, saved: viewSaved }[S.tab]();
+  $('#view').innerHTML = ({ week: viewWeek, flavors: viewFlavors, all: viewAll, saved: viewSaved }[S.tab] || viewWeek)();
   const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
   history.replaceState(null, '', p.toString() ? '#' + p : location.pathname + location.search);
 }
@@ -391,10 +436,15 @@ $('#view').addEventListener('click', e => {
     const card = document.querySelector(`[data-p="${p.i}"]`); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 });
+$('#view').addEventListener('toggle', e => {
+  const el = e.target; if (!el.matches || !el.matches('details.wkb')) return;
+  const w = el.dataset.week;
+  if (el.open) { S.weeks.add(w); const rows = el.querySelector('.rows'); if (!rows.innerHTML) rows.innerHTML = drops.filter(d => d.week === w).map(dropRow).join(''); }
+  else S.weeks.delete(w);
+}, true);
 $('#view').addEventListener('change', e => {
   const k = e.target.dataset.sel; if (!k) return;
   S[k] = e.target.value; S.limit = 40;
-  if (k === 'city') store.set('flavorade-city', S.city);
   render();
 });
 
