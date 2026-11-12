@@ -53,13 +53,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .searchwrap{padding-top:4px;padding-bottom:4px}
 #fotw:empty{display:none}
-#fotw .picks{margin:12px 0 16px;display:grid;grid-template-columns:118px 1fr;gap:14px;padding:14px}
+/* the banner's side column lines up with the first tab below it: same inset (2px border + 14px) and same column math */
+#fotw .picks{margin:12px 0 16px;display:grid;grid-template-columns:calc((100% - 18px) / 4) 1fr;column-gap:6px;padding:14px}
+.tabs{padding:0 16px}
 #fotw .side{display:flex;flex-direction:column;gap:8px}
 #fotw .side button{border:1.5px solid var(--line);border-radius:6px;background:transparent;color:#fff;font:700 12px/1.2 var(--head);letter-spacing:.04em;text-transform:uppercase;padding:12px 6px;text-align:center}
 #fotw .side button[aria-selected=true]{background:var(--yellow);border-color:var(--yellow);color:#2b1640}
 #fotw .main{min-width:0}
 #fotw .main .sec-title{margin-top:0}
-@media(max-width:520px){#fotw .picks{grid-template-columns:84px 1fr;gap:10px;padding:12px 10px}#fotw .side button{font-size:10.5px;padding:10px 3px}}
+@media(max-width:520px){#fotw .picks{grid-template-columns:calc((100% - 12px) / 4) 1fr;column-gap:4px}#fotw .side button{font-size:10.5px;padding:10px 3px}#fotw .main{padding-left:6px}}
 @media(min-width:640px){#fotw .grid{grid-template-columns:1fr 1fr}}
 #fotw .grid>.card:only-child{grid-column:1/-1}
 .fotm-wk{font:700 13px var(--head);letter-spacing:.05em;text-transform:uppercase;color:var(--lav);margin:18px 0 8px}
