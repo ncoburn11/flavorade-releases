@@ -23,9 +23,12 @@ It publishes the **Week of** the coming Monday.
 - **Unknown C11s:** any C11 that isn't in `knownOtherC11` is reported to the owner as a NEW C11 for review and is never shown.
 - **Never listed:** Frozen Produce, Hollister Distribution, 510 Consultants.
 - **Every other license is a store from `stores.json`** ("Store | City").
-- **New flavors:** each run snapshots the GrowFlow **IN STOCK** room (`Bulk Inventory`) and compares it with last Sunday's snapshot.
-  - Additions are logged under that Sunday in `state.menuLog`.
-  - They show as "New flavors" for the Week of that Sunday + 15 days. For example, moved Sunday 11/1 shows on the Week of 11/16.
+- **New flavors:** these come ONLY from the live menu repo `ncoburn11/live-menu` (git history of `index.html`, its `menu-data` Flavorade list). GrowFlow is never used for this.
+  - The snapshot for a Sunday is the live menu as of the last refresh that Sunday.
+  - Flavors listed on Sunday W but not on the Sunday before are newly listed. That includes flavors back after selling out.
+  - They show as "New flavors" for the Week of W + 15 days. For example, listed Sunday 11/1 shows on the Week of 11/16.
+  - Owner-provided lists in `tools/state.json` `menuLog` (11/1 and 11/8) are used instead of the history for those Sundays.
+  - Read the live menu repo only. Never edit it, and never copy anything from it to this site except flavor names.
 - **Flavors of the Week:** 2 picks from that week's new flavors.
   - Priority: No Till Kings > Wizard Trees > Woodzy (Woodwide) > Rooted Fire "Chem" > Pearl Pharma "OG"/"Blueberry" > Rooted Fire "Peanut Butter" > Rooted Fire > Pearl Pharma > fruity notes > gassy notes.
   - Ties go to the flavor at the most stores. If there are only 1 or 2 new flavors, they're all picked.
@@ -43,14 +46,11 @@ It publishes the **Week of** the coming Monday.
      { totalCount items { poNumber orderType stage transferDate comment notes internalNote
        vendor { name licenseNumber vendorAddress } lineItems { isSample isEducationalSample isVoided product { name } } } } }
    ```
-2. **IN STOCK menu:** page through all of it and save every page:
-   ```graphql
-   { inventories(skip: 0, take: 50, where: { product: { name: { startsWith: "Flavorade" } }, room: { name: { eq: "Bulk Inventory" } } })
-     { totalCount items { product { name } remainingQuantity } } }
-   ```
+2. **Live menu history:** attach `ncoburn11/live-menu` read-only (add_repo) and clone it next to this repo as `../live-menu`.
+   Run `git -C ../live-menu fetch --unshallow` (or clone with `--depth 300`) so the history reaches at least 4 weeks back.
 3. **Deals:** `get_spreadsheet` for the row count of "Current - 2026", then `get_values` `'Current - 2026'!A1:I<rowCount>`. Save the JSON as `deals.json`.
 4. **Dry run:**
-   `node tools/weekly.js --orders o1.json o2.json ... --menu m1.json m2.json ... --deals deals.json --dry`
+   `node tools/weekly.js --orders o1.json o2.json ... --deals deals.json --livemenu ../live-menu --dry`
 5. **Fix what the report lists:**
    - **"Unknown store license":** look up the store name at `https://higherorigins.com/license-search/<LICENSE>` (fetch with `include_selectors: ["h1"]`) and check the GrowFlow address with a web search.
      - Add it to `stores.json` as "Store | City", using the town from the address spelled out ("Sacramento", not "Sac").
@@ -69,5 +69,6 @@ It publishes the **Week of** the coming Monday.
    - Anything held back.
    - New stores you named.
    - Flavors missing tasting notes.
+   - Any "NO LIVE MENU HISTORY" or "LIVE MENU REPO NOT READABLE" line. If you see one, fix the clone and re-run. Never publish a week with new flavors silently missing.
 
 Data format is documented at the top of `data.js`. `index.html` needs no changes for a weekly update.

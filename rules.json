@@ -1,7 +1,6 @@
 {
   "_doc": "Rules for the Sunday release update. Edit with care; see CLAUDE.md.",
   "distributorLicense": "C11-0001795-LIC",
-  "liveMenuRoom": "Bulk Inventory",
   "includeStages": [
     "CLOSED",
     "IN_TRANSFER"

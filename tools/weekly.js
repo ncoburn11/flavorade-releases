@@ -1,36 +1,27 @@
 #!/usr/bin/env node
 // Sunday release update for the Flavorade Release Finder. See CLAUDE.md for the full procedure.
 //
-//   node tools/weekly.js --orders o1.json [o2.json ...] --menu m1.json [m2.json ...] \
-//        --deals deals.json [--notes notes.json] [--now 2026-11-15T16:47:00Z] [--dry]
+//   node tools/weekly.js --orders o1.json [o2.json ...] --deals deals.json \
+//        [--livemenu ../live-menu] [--notes notes.json] [--now 2026-11-15T16:47:00Z] [--dry]
 //
-// --orders  GrowFlow order query pages (see CLAUDE.md for the query; include comment, notes,
-//           internalNote and line-item sample flags).
-// --menu    GrowFlow inventory pages for the IN STOCK room (rules.liveMenuRoom).
-// --deals   Values of the "Current - 2026" tab of the deals sheet (JSON from get_values).
-// --notes   {"Strain|Collab": {"type": "...", "notes": "..."}} for flavors new to data.js.
-// --now     Pretend the run happens at this time (testing). Default: now.
-// --dry     Print the report, change nothing.
+// --orders    GrowFlow order query pages (see CLAUDE.md for the query).
+// --deals     Values of the "Current - 2026" tab of the deals sheet (JSON from get_values).
+// --livemenu  A full-history clone of ncoburn11/live-menu (read-only). Default: ../live-menu
+// --notes     {"Strain|Collab": {"type": "...", "notes": "..."}} for flavors new to data.js.
+// --now       Pretend the run happens at this time (testing). Default: now.
+// --dry       Print the report, change nothing.
 //
-// Rules (rules.json + tools/state.json):
-// - Window: orders whose effective date is after state.lastCutoff and up to now. The effective date
-//   is the transfer date, or a later date written in the order's comment/notes (within 30 days).
-// - Only CLOSED / IN_TRANSFER orders; only Flavorade vape lines; sample lines left out.
-// - C11 distributors are never shown, except the five in rules.c11Allowed. Unknown C11s are reported.
-// - Everything is published as the week of the coming Monday (run on Sunday -> next day).
-// - New flavors = flavors moved to the IN STOCK menu on the weekend 15 days before that Monday
-//   (state.menuLog). Each run snapshots the IN STOCK menu and logs this weekend's additions.
-// - Flavors of the Week: 2 picks from the week's new flavors (priority rule in pickFotw()).
-// - Deals come from the deals sheet. Weeks older than 6 months are removed.
+// Rules: see CLAUDE.md and rules.json. New flavors come only from the live menu repo's history:
+// Flavorade SKUs newly listed on Sunday W (vs the Sunday before) are new for the Week of W + 15 days.
 const fs = require('fs');
 const path = require('path');
 const L = require('./lib');
 
 const args = process.argv.slice(2);
-const opt = { orders: [], menu: [] };
+const opt = { orders: [] };
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
-  if (a === '--orders' || a === '--menu') { const k = a.slice(2); while (args[i + 1] && !args[i + 1].startsWith('--')) opt[k].push(args[++i]); }
+  if (a === '--orders') { const k = a.slice(2); while (args[i + 1] && !args[i + 1].startsWith('--')) opt[k].push(args[++i]); }
   else if (a === '--dry') opt.dry = true;
   else if (a.startsWith('--')) opt[a.slice(2)] = args[++i];
 }
@@ -182,24 +173,24 @@ if (opt.deals) {
   for (const d of drops.concat(R.drops)) { const deal = find(d[1], d[2]); if (deal !== d[3]) { d[3] = deal; dealsApplied++; } }
 }
 
-/* ---------- live-menu snapshot -> new flavors ---------- */
-const menuNames = new Set();
-if (opt.menu.length) {
-  for (const f of opt.menu) {
-    const j = readJSON(f); const items = j.data ? j.data.inventories.items : j.items || j;
-    for (const it of items) {
-      if (!(Number(it.remainingQuantity) > 0)) continue;
-      if (it.room && it.room.name && it.room.name !== rules.liveMenuRoom) continue;
-      const p = L.parseProduct(it.product && it.product.name); if (p) menuNames.add(`${p.strain}|${p.collab}`);
-    }
-  }
+/* ---------- new flavors, from the live menu repo's history ---------- */
+// Flavors newly listed on the live menu on Sunday W (vs the Sunday before) are "New flavors"
+// for the Week of W + 15 days. A flavor that comes back after selling out also counts as new.
+const LM = require('./livemenu');
+const liveRepo = opt.livemenu || path.join(ROOT, '..', 'live-menu');
+const newWeekend = addDays(WEEK, -15);
+const liveNote = [];
+function addedOn(W) {
+  if (state.menuLog && state.menuLog[W]) { liveNote.push(`Sunday ${W}: owner-provided list`); return state.menuLog[W]; }
+  let a, b;
+  try { a = LM.snapshotAt(liveRepo, W); b = LM.snapshotAt(liveRepo, addDays(W, -7)); }
+  catch (e) { liveNote.push(`LIVE MENU REPO NOT READABLE at ${liveRepo}: ${e.message.split('\n')[0]}`); return null; }
+  const fresh = s => s && L.caDate(new Date(s.updated)) > addDays(W, -7) ; // snapshot must come from that week
+  if (!a || !b || !fresh(a)) { liveNote.push(`NO LIVE MENU HISTORY for Sunday ${W} (or the Sunday before); new flavors not set`); return null; }
+  liveNote.push(`Sunday ${W}: live menu ${a.commit} (${a.updated}) vs ${b.commit} (${b.updated})`);
+  return a.flavors.filter(x => !b.flavors.includes(x));
 }
-const prevMenu = new Set(state.menuSnapshot ? state.menuSnapshot.products : []);
-const addedToMenu = [...menuNames].filter(n => !prevMenu.has(n));
-const menuLog = { ...(state.menuLog || {}) };
-if (opt.menu.length && addedToMenu.length) menuLog[SUNDAY] = [...new Set((menuLog[SUNDAY] || []).concat(addedToMenu))];
-const newWeekend = addDays(WEEK, -15);                 // the menu weekend that becomes "new" this WEEK
-const newNames = menuLog[newWeekend] || [];
+const newNames = addedOn(newWeekend) || [];
 const newIds = newNames.map(n => { const [strain, collab = ''] = n.split('|'); return pid({ strain, collab: L.fixCollab(collab) }); });
 
 /* ---------- Flavors of the Week ---------- */
@@ -229,9 +220,9 @@ const out = [];
 out.push(`# Release update: Week of ${WEEK}`, '');
 out.push(`- Orders window: ${since.toISOString()} to ${NOW.toISOString()}`);
 out.push(`- Stores published: ${drops.length} (from ${report.used.length} orders)`);
-out.push(`- New flavors (moved to IN STOCK the weekend of ${newWeekend}): ${newIds.length ? newIds.map(pname).join(', ') : 'none logged'}`);
+out.push(`- New flavors (newly listed on the live menu Sunday ${newWeekend}): ${newIds.length ? newIds.map(pname).join(', ') : 'none logged'}`);
 out.push(`- Flavors of the Week: ${fotw.length ? fotw.map(i => `${pname(i)} (tier ${tier(i)}, ${storesThisWeek(i)} stores)`).join('; ') : 'none'}`);
-out.push(`- Added to IN STOCK since last snapshot (logged for the week of ${addDays(SUNDAY, 15)}): ${opt.menu.length ? (addedToMenu.join(', ') || 'none') : 'NO MENU SNAPSHOT GIVEN'}`);
+out.push(`- New-flavor source: ${liveNote.join('; ')}`);
 const noNotes = [...new Set(newIds.concat(created))].filter(i => !R.products[i][3]);
 if (noNotes.length) out.push(`- NEED TASTING NOTES: ${noNotes.map(i => R.products[i][0] + '|' + R.products[i][1]).join(', ')}`);
 out.push(`- Deals updated on ${dealsApplied} store rows`);
@@ -262,9 +253,8 @@ window.FLAVORS_OF_THE_MONTH = ${JSON.stringify(Object.fromEntries(Object.entries
 
 state.lastCutoff = NOW.toISOString();
 state.publishedPOs = [...new Set((state.publishedPOs || []).concat(report.used))].slice(-3000);
-if (opt.menu.length) state.menuSnapshot = { takenAt: NOW.toISOString(), products: [...menuNames].sort() };
-for (const w of Object.keys(menuLog)) if (w < addDays(CUTOFF, -30)) delete menuLog[w];
-state.menuLog = menuLog;
+delete state.menuSnapshot;
+for (const w of Object.keys(state.menuLog || {})) if (w < addDays(CUTOFF, -30)) delete state.menuLog[w];
 fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n');
 fs.writeFileSync(path.join(ROOT, 'tools', 'last-report.md'), text);
 console.log('Written: data.js, flavors-of-the-month.js, tools/state.json, tools/last-report.md');
