@@ -1,4 +1,10 @@
 {
+  "C10-0000009-LIC": {
+    "shop": "1841 El Camino",
+    "city": "Sacramento",
+    "deal": "",
+    "growflow": "HORIZON NONPROFIT COLLECTIVE"
+  },
   "C12-0000504-LIC": {
     "shop": "Ashe Society",
     "city": "Pomona",
@@ -23,6 +29,12 @@
     "deal": "",
     "growflow": "BUDBEES LLC"
   },
+  "C10-0001424-LIC": {
+    "shop": "Cake House",
+    "city": "Encinitas",
+    "deal": "",
+    "growflow": "Humanity Encinitas 4, Inc."
+  },
   "C10-0000769-LIC": {
     "shop": "Cake House",
     "city": "Vista",
@@ -41,6 +53,12 @@
     "deal": "30% off Tuesdays",
     "growflow": "SACRAMENTO COMMUNITY CANNABIS COLLECTIVE"
   },
+  "C10-0000422-LIC": {
+    "shop": "Dr. Greenthumbs",
+    "city": "La Mesa",
+    "deal": "",
+    "growflow": "EVERGREEN EVOLUTION, LLC"
+  },
   "C10-0000363-LIC": {
     "shop": "Evergreen",
     "city": "Santa Ana",
@@ -48,8 +66,8 @@
     "growflow": "STPC ENTERPRISES"
   },
   "C12-0000615-LIC": {
-    "shop": "Green Dragon Caregivers",
-    "city": "N Hollywood",
+    "shop": "Green Dragon",
+    "city": "North Hollywood",
     "deal": "",
     "growflow": "GREEN DRAGON CAREGIVERS, INC."
   },
@@ -101,8 +119,14 @@
     "deal": "40% OFF FRIDAY & SUNDAY",
     "growflow": "RD SAN BERNARDINO LLC"
   },
+  "C10-0000644-LIC": {
+    "shop": "Humanity Wellness",
+    "city": "Santa Rosa",
+    "deal": "",
+    "growflow": "HUMANITY OF SANTA ROSA INC."
+  },
   "C10-0001089-LIC": {
-    "shop": "JANE Dispensary",
+    "shop": "Jane Dispensary",
     "city": "Cotati",
     "deal": "",
     "growflow": "INDYTHREE, LLC"
@@ -112,6 +136,12 @@
     "city": "Santa Rosa",
     "deal": "",
     "growflow": "Jane Dispensary"
+  },
+  "C10-0000904-LIC": {
+    "shop": "Jungle Boys",
+    "city": "La Mesa",
+    "deal": "",
+    "growflow": "Parkway Ventures LLC"
   },
   "C10-0000606-LIC": {
     "shop": "Kannabis Works",
@@ -137,23 +167,23 @@
     "deal": "25% off ALL vapes Thursday, 25% off Saturday",
     "growflow": "MIRAMAR PROFESSIONAL SERVICES"
   },
-  "C10-0000728-LIC": {
-    "shop": "Megans Organic Market",
-    "city": "San Luis Obispo",
-    "deal": "30% Off Sunday",
-    "growflow": "MOM SLO, LLC"
+  "C10-0001703-LIC": {
+    "shop": "Mankind",
+    "city": "San Diego",
+    "deal": "",
+    "growflow": "7126 Miramar Assets, LLC"
   },
   "C10-0001389-LIC": {
-    "shop": "Megans Organic",
+    "shop": "Megan's Organic Market",
     "city": "Goleta",
     "deal": "30% Off Sunday",
     "growflow": "MOM GO LLC"
   },
-  "C10-0001802-LIC": {
-    "shop": "Noble Victory 2",
-    "city": "Vista",
-    "deal": "",
-    "growflow": "Noble Victory 2"
+  "C10-0000728-LIC": {
+    "shop": "Megan's Organic Market",
+    "city": "San Luis Obispo",
+    "deal": "30% Off Sunday",
+    "growflow": "MOM SLO, LLC"
   },
   "C10-0001192-LIC": {
     "shop": "NUG",
@@ -161,17 +191,35 @@
     "deal": "30% off Mondays",
     "growflow": "NUG Alameda"
   },
+  "C10-0000846-LIC": {
+    "shop": "NUG",
+    "city": "El Cerrito",
+    "deal": "",
+    "growflow": "ECWC Partners INC"
+  },
   "C10-0000369-LIC": {
     "shop": "NUG",
     "city": "Oakland",
     "deal": "30% off Mondays",
     "growflow": "OAKLYFE LLC"
   },
-  "C10-0001037-LIC": {
-    "shop": "OTC Sherman Oaks",
-    "city": "LA",
-    "deal": "25% OFF Fridays, Saturdays, & Sundays",
-    "growflow": "OTC VAN NUYS"
+  "C10-0000508-LIC": {
+    "shop": "NUG",
+    "city": "Sacramento",
+    "deal": "",
+    "growflow": "COMMUNITY HEALTH SOLUTIONS"
+  },
+  "C10-0000479-LIC": {
+    "shop": "NUG",
+    "city": "San Leandro",
+    "deal": "",
+    "growflow": "DSWC, INC."
+  },
+  "C10-0001802-LIC": {
+    "shop": "Noble Victory 2",
+    "city": "Vista",
+    "deal": "",
+    "growflow": "Noble Victory 2"
   },
   "C10-0001504-LIC": {
     "shop": "OTC",
@@ -191,6 +239,12 @@
     "deal": "25% OFF Fridays, Saturdays, & Sundays",
     "growflow": "CORONA WELLNESS LLC"
   },
+  "C10-0001596-LIC": {
+    "shop": "OTC",
+    "city": "Daly City",
+    "deal": "",
+    "growflow": "SKYLINE YAROK, LLC"
+  },
   "C10-0001212-LIC": {
     "shop": "OTC",
     "city": "El Monte",
@@ -205,7 +259,7 @@
   },
   "C10-0001475-LIC": {
     "shop": "OTC",
-    "city": "Mc Farland",
+    "city": "McFarland",
     "deal": "25% OFF Fridays, Saturdays, & Sundays",
     "growflow": "Otc Mcfarland LLC"
   },
@@ -257,6 +311,12 @@
     "deal": "25% OFF Fridays, Saturdays, & Sundays",
     "growflow": "Off the Charts Santa Monica"
   },
+  "C10-0001037-LIC": {
+    "shop": "OTC",
+    "city": "Sherman Oaks",
+    "deal": "25% OFF Fridays, Saturdays, & Sundays",
+    "growflow": "OTC VAN NUYS"
+  },
   "C10-0001132-LIC": {
     "shop": "OTC",
     "city": "Stockton",
@@ -271,9 +331,21 @@
   },
   "C10-0000764-LIC": {
     "shop": "OTC",
-    "city": "W Hollywood",
+    "city": "West Hollywood",
     "deal": "25% OFF Fridays, Saturdays, & Sundays",
     "growflow": "AEON WEST HOLLYWOOD, INC."
+  },
+  "C10-0000107-LIC": {
+    "shop": "Packs",
+    "city": "Hollywood",
+    "deal": "",
+    "growflow": "KB COLLECTIVE FOR COMPASSION AND CARE, INC."
+  },
+  "C12-0000380-LIC": {
+    "shop": "Packs",
+    "city": "San Bernardino",
+    "deal": "",
+    "growflow": "BLUNT BROTHERS INC."
   },
   "C10-0001448-LIC": {
     "shop": "Packs OC",
@@ -287,17 +359,11 @@
     "deal": "50% off Fridays",
     "growflow": "Summit Locations LLC"
   },
-  "C10-0000107-LIC": {
-    "shop": "Packs",
-    "city": "Hollywood",
+  "C10-0000199-LIC": {
+    "shop": "Perfect Union Northside",
+    "city": "Sacramento",
     "deal": "",
-    "growflow": "KB COLLECTIVE FOR COMPASSION AND CARE, INC."
-  },
-  "C12-0000380-LIC": {
-    "shop": "Packs",
-    "city": "San Bernardino",
-    "deal": "",
-    "growflow": "BLUNT BROTHERS INC."
+    "growflow": "RIVER CITY PHOENIX"
   },
   "C10-0001451-LIC": {
     "shop": "Root One",
@@ -335,29 +401,77 @@
     "deal": "",
     "growflow": "SLOCAL ROOTS, LLC"
   },
+  "C10-0000263-LIC": {
+    "shop": "Symbiotic",
+    "city": "Sacramento",
+    "deal": "",
+    "growflow": "SEPTEM COMA INC."
+  },
   "C10-0000669-LIC": {
     "shop": "The Boulevard",
     "city": "Lemon Grove",
     "deal": "",
     "growflow": "SAN DIEGROWN, INC."
   },
+  "C10-0000961-LIC": {
+    "shop": "The Bright Spot",
+    "city": "Fairfield",
+    "deal": "",
+    "growflow": "J.J.V.I. ENTERPRISES,INC."
+  },
   "C10-0000897-LIC": {
     "shop": "The Chronic",
-    "city": "LA",
+    "city": "Los Angeles",
     "deal": "40% off Flavorade Friday",
     "growflow": "NOVA GROW LABS, LLC"
   },
   "C10-0001218-LIC": {
     "shop": "The Ounce",
-    "city": "N Hollywood",
+    "city": "North Hollywood",
     "deal": "40% off Fridays",
     "growflow": "NEWCORP ACQUISITION LLC."
   },
+  "C10-0001235-LIC": {
+    "shop": "The Plug",
+    "city": "Napa",
+    "deal": "",
+    "growflow": "1858 TANEN RETAIL LLC"
+  },
   "C10-0001207-LIC": {
-    "shop": "The Set Hollywood",
-    "city": "LA",
+    "shop": "The Set",
+    "city": "Hollywood",
     "deal": "",
     "growflow": "THE SET HOLLYWOOD"
+  },
+  "C10-0000839-LIC": {
+    "shop": "Valley Verde",
+    "city": "Van Nuys",
+    "deal": "",
+    "growflow": "14901 SHERMAN WAY LLC"
+  },
+  "C10-0001062-LIC": {
+    "shop": "Wellgreens",
+    "city": "Chula Vista",
+    "deal": "25% off Thursday",
+    "growflow": "HARVEST OF CHULA VISTA, LLC"
+  },
+  "C10-0001404-LIC": {
+    "shop": "Wellgreens",
+    "city": "Encinitas",
+    "deal": "25% off Thursday",
+    "growflow": "ECRENCINITAS4, LLC"
+  },
+  "C10-0000829-LIC": {
+    "shop": "Wellgreens Lake Murray",
+    "city": "La Mesa",
+    "deal": "",
+    "growflow": "Wellgreens and Wellgreens Everything Cannabis"
+  },
+  "C10-0000550-LIC": {
+    "shop": "Wellgreens",
+    "city": "Vista",
+    "deal": "25% off Thursday",
+    "growflow": "WELLGREENS"
   },
   "C10-0001411-LIC": {
     "shop": "Wellgreens Balboa",
@@ -383,34 +497,16 @@
     "deal": "25% off Thursday",
     "growflow": "UNIVERSITY VENTURES LLC"
   },
-  "C10-0001062-LIC": {
-    "shop": "Wellgreens",
-    "city": "Chula Vista",
-    "deal": "25% off Thursday",
-    "growflow": "HARVEST OF CHULA VISTA, LLC"
-  },
-  "C10-0001404-LIC": {
-    "shop": "Wellgreens",
-    "city": "Encinitas",
-    "deal": "25% off Thursday",
-    "growflow": "ECRENCINITAS4, LLC"
-  },
-  "C10-0000829-LIC": {
-    "shop": "Wellgreens",
-    "city": "La Mesa",
-    "deal": "",
-    "growflow": "Wellgreens and Wellgreens Everything Cannabis"
-  },
-  "C10-0000550-LIC": {
-    "shop": "Wellgreens",
-    "city": "Vista",
-    "deal": "25% off Thursday",
-    "growflow": "WELLGREENS"
-  },
   "C10-0000319-LIC": {
     "shop": "Zen Garden Wellness",
-    "city": "Sac",
+    "city": "Sacramento",
     "deal": "50% off Saturdays",
     "growflow": "P.S.A.C., INC."
+  },
+  "C10-0000318-LIC": {
+    "shop": "Zen Garden Wellness",
+    "city": "Stockton",
+    "deal": "",
+    "growflow": "STOCKTON PARTNERS, INC."
   }
 }

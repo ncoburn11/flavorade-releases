@@ -1,7 +1,7 @@
 # Flavorade Release Finder: weekly update
 
 Public page: https://ncoburn11.github.io/flavorade-releases/ (embedded on flavoradeextracts.com/releases).
-Never link to or copy anything from the private buyers menu (ncoburn11/live-menu).
+Never use emoji anywhere on the page. Never link to or copy anything from the private buyers menu (ncoburn11/live-menu).
 
 When asked to "update releases" (or when the Monday scheduled task fires), do this:
 
@@ -28,18 +28,20 @@ When asked to "update releases" (or when the Monday scheduled task fires), do th
      UNSORTED column E ("Flavorade x Collab | Strain | Vape Cart | 1g - Type - Notes").
    - Write the matches to `notes.json` as `{"Strain|Collab": {"type": "...", "notes": "..."}}`.
    - If a flavor truly has no note yet, publish it without one and say so.
-5. **Unknown stores.** Stores listed under "Stores not published" have no entry in `stores.json`
-   (license → `shop`, `city`, `deal`).
-   - Add one only when you are sure of the public store name, for example "Otc X LLC" → `OTC` + city.
-   - Otherwise leave it out and list it in your summary so the owner can name it.
-   - Deals also live in `stores.json`. Edit them there when the owner gives a new deal.
+5. **Unknown stores.** Never leave a store unnamed and never guess.
+   - Stores listed under "Stores not published" have no entry in `stores.json` (license → `shop`, `city`, `deal`).
+   - Look up the license's public store name (DBA) by fetching `https://higherorigins.com/license-search/<LICENSE>`
+     (state DCC data; fetch with `include_selectors: ["h1"]`). Cross-check the GrowFlow `vendorAddress` with a web search of the address.
+   - Add the store as `"Store" | "City"` and use the town from the address, spelled out: "Sacramento", not "Sac".
+   - Use the brand customers know: Off The Charts is "OTC", and a Higher Ground "RD ..." entity is "Higher Ground".
+   - Leave off distributor orders with no clear store (KMMK, 510 Consultants, Hollister).
 6. **Stores outside GrowFlow.** For a store the owner names (Stiiizy, March and Ash, etc.), pass `--extra extra.json`.
 7. **Run for real.** Run the same command without `--dry`, then commit `data.js`, `stores.json`, and
    `tools/last-report.md` and push to `main`. GitHub Pages republishes in about a minute.
 8. **Summarize for the owner:** the new flavors, the number of stores, any unnamed stores, and any missing notes.
 
-**Nick's Favorite Flavors** live in `picks.js` (a list of flavor names). Edit it only when the owner names picks.
-A pick shows on the All Time tab while it has dropped in the past 4 weeks.
+**Flavors of the Month** are logged week by week in `flavors-of-the-month.js` (`"YYYY-MM-DD": ["Flavor", ...]`).
+When the owner names this week's picks, add a line for WEEK and never delete old weeks. The All Time tab shows every pick logged in the past 4 weeks.
 
 The page only shows the last 6 months of drops; older data stays in `data.js`.
 
