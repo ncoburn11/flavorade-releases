@@ -42,7 +42,11 @@ const today = L.caDate(NOW);
 const dow = new Date(today + 'T12:00:00Z').getUTCDay(); // 0 = Sunday
 const WEEK = addDays(today, dow === 0 ? 1 : 8 - dow);     // the coming Monday
 const SUNDAY = addDays(WEEK, -1);                          // this run's Sunday
-const since = new Date(state.lastCutoff);
+// A week that was already published is a RE-RUN: read the whole week again from where its first run
+// started and MERGE into it (add stores/flavors, never remove). A new week starts at the last cutoff.
+const weeksState = state.weeks || {};
+const RERUN = !!weeksState[WEEK];
+const since = new Date(RERUN ? weeksState[WEEK].start : state.lastCutoff);
 
 /* ---------- effective date ---------- */
 function effectiveDate(o) {
@@ -125,12 +129,13 @@ for (const [k, n] of Object.entries(notes)) {
 
 /* ---------- drops for WEEK ---------- */
 const orders = L.readOrders(opt.orders);
-const published = new Set(state.publishedPOs || []);
+// PO -> week it was published in (older state kept a plain list; those POs all belong to earlier weeks)
+const poWeek = Array.isArray(state.publishedPOs) ? Object.fromEntries(state.publishedPOs.map(p => [p, 'legacy'])) : { ...(state.publishedPOs || {}) };
 const report = { holds: [], newC11: new Map(), skipped: [], used: [] };
 const rows = new Map(); // shop|city -> row
 for (const o of orders.sort((a, b) => a.transferDate < b.transferDate ? -1 : 1)) {
   if (!rules.includeStages.includes(o.stage) || !rules.includeOrderTypes.includes(o.orderType)) continue;
-  if (published.has(o.poNumber)) continue;
+  if (poWeek[o.poNumber] && poWeek[o.poNumber] !== WEEK) continue; // already shown in another week
   const eff = effectiveDate(o);
   if (!(eff > since && eff <= NOW)) continue;
   const flavors = (o.lineItems || []).filter(li => !sampleLine(li)).map(li => L.parseProduct(li.product && li.product.name)).filter(Boolean);
@@ -146,7 +151,16 @@ for (const o of orders.sort((a, b) => a.transferDate < b.transferDate ? -1 : 1))
   }
   report.used.push(o.poNumber);
 }
-const drops = [...rows.values()];
+const runDrops = [...rows.values()];
+// Merge with what this week already shows: keep every store and flavor, add anything new.
+const drops = R.drops.filter(d => d[0] === WEEK).map(d => [d[0], d[1], d[2], d[3], [...d[4]]]);
+const added = [];
+for (const r of runDrops) {
+  const e = drops.find(x => norm(x[1]) === norm(r[1]) && norm(x[2]) === norm(r[2]));
+  if (!e) { drops.push(r); added.push(`${r[1]} | ${r[2]} (new store: ${r[4].map(i => R.products[i][0]).join(', ')})`); continue; }
+  const nw = r[4].filter(i => !e[4].includes(i));
+  if (nw.length) { e[4] = e[4].concat(nw); added.push(`${e[1]} | ${e[2]}: + ${nw.map(i => R.products[i][0]).join(', ')}`); }
+}
 
 /* ---------- deals from the sheet ---------- */
 const dealFinder = L.dealFinder;
@@ -174,7 +188,7 @@ function addedOn(W) {
   return a.flavors.filter(x => !b.flavors.includes(x));
 }
 const newNames = addedOn(newWeekend) || [];
-const newIds = newNames.map(n => { const [strain, collab = ''] = n.split('|'); return pid({ strain, collab: L.fixCollab(collab) }); });
+const newIds = [...new Set((R.newFlavors[WEEK] || []).concat(newNames.map(n => { const [strain, collab = ''] = n.split('|'); return pid({ strain, collab: L.fixCollab(collab) }); })))];
 
 /* ---------- Flavors of the Week ---------- */
 const storesThisWeek = id => drops.filter(d => d[4].includes(id)).length;
@@ -200,9 +214,10 @@ const fotw = [...newIds].sort((a, b) => tier(a) - tier(b) || storesThisWeek(b) -
 /* ---------- report ---------- */
 const pname = i => R.products[i][0] + (R.products[i][1] ? ' x ' + R.products[i][1] : '');
 const out = [];
-out.push(`# Release update: Week of ${WEEK}`, '');
+out.push(`# Release update: Week of ${WEEK}${RERUN ? ' (RE-RUN: merged into the week already published, nothing removed)' : ''}`, '');
+if (RERUN) out.push(`- RE-RUN added: ${added.length ? added.join('; ') : 'nothing new'}`);
 out.push(`- Orders window: ${since.toISOString()} to ${NOW.toISOString()}`);
-out.push(`- Stores published: ${drops.length} (from ${report.used.length} orders)`);
+out.push(`- Stores in this week: ${drops.length} (orders read this run: ${report.used.length})`);
 out.push(`- New flavors (newly listed on the live menu Sunday ${newWeekend}): ${newIds.length ? newIds.map(pname).join(', ') : 'none logged'}`);
 out.push(`- Flavors of the Week: ${fotw.length ? fotw.map(i => `${pname(i)} (tier ${tier(i)}, ${storesThisWeek(i)} stores)`).join('; ') : 'none'}`);
 out.push(`- New-flavor source: ${liveNote.join('; ')}`);
@@ -227,15 +242,18 @@ L.saveData(R);
 
 const fotmPath = path.join(ROOT, 'flavors-of-the-month.js');
 const fotm = (() => { try { const s = fs.readFileSync(fotmPath, 'utf8'); return JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1).replace(/^\s*\/\/.*$/mg, '').replace(/,\s*}/g, '}')); } catch { return {}; } })();
-if (fotw.length) fotm[WEEK] = fotw.map(i => `${R.products[i][0]}|${R.products[i][1]}`);
+if (fotw.length && !(fotm[WEEK] && fotm[WEEK].length)) fotm[WEEK] = fotw.map(i => `${R.products[i][0]}|${R.products[i][1]}`); // picks are kept once made
 for (const w of Object.keys(fotm)) if (w < CUTOFF) delete fotm[w];
 fs.writeFileSync(fotmPath, `// Flavors of the Week, logged each Sunday by tools/weekly.js (2 picks per week, see rules.json).
 // The page shows this week's picks as "Flavors of the Week" and the past 4 weeks as "Flavors of the Month".
 window.FLAVORS_OF_THE_MONTH = ${JSON.stringify(Object.fromEntries(Object.entries(fotm).sort().reverse()), null, 2)};
 `);
 
-state.lastCutoff = NOW.toISOString();
-state.publishedPOs = [...new Set((state.publishedPOs || []).concat(report.used))].slice(-3000);
+if (!(new Date(state.lastCutoff) > NOW)) state.lastCutoff = NOW.toISOString();
+for (const po of report.used) poWeek[po] = WEEK;
+state.publishedPOs = Object.fromEntries(Object.entries(poWeek).slice(-4000));
+state.weeks = { ...weeksState, [WEEK]: { start: since.toISOString(), lastRun: NOW.toISOString() } };
+for (const w of Object.keys(state.weeks)) if (w < CUTOFF) delete state.weeks[w];
 delete state.menuSnapshot;
 for (const w of Object.keys(state.menuLog || {})) if (w < addDays(CUTOFF, -30)) delete state.menuLog[w];
 fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n');
