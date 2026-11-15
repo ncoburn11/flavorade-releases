@@ -125,6 +125,23 @@ main{padding-bottom:44px}
 .fav[aria-pressed=true] svg{fill:var(--yellow);stroke:var(--yellow)}
 .fl-more{display:none;border-top:1px solid var(--line);padding:10px 15px 15px;background:rgba(0,0,0,.14)}
 .card.open .fl-more{display:block}
+/* No Till Kings + Wizard Trees: animated gold border, a light sweep across the card, twinkling sparkles, shimmering name */
+@property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
+.card.shine{position:relative;border-color:transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,conic-gradient(from var(--spin),#e8a83e,#fff3c4,#c58fde,#e8a83e,#fff3c4,#c58fde,#e8a83e) border-box;box-shadow:0 0 18px rgba(232,168,62,.3);animation:shine-spin 6s linear infinite,shine-glow 2.4s ease-in-out infinite}
+.card.shine::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,243,196,.2) 47%,rgba(255,255,255,.34) 50%,rgba(255,243,196,.2) 53%,transparent 65%) no-repeat;background-size:250% 100%;background-position:150% 0;animation:shine-sweep 4.5s ease-in-out infinite}
+.card.shine .fl-name{background:linear-gradient(90deg,#fff 0%,#ffe7a3 25%,#fff 50%,#e9c6ff 75%,#fff 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine-text 4s linear infinite}
+.sparkles{position:absolute;inset:0;pointer-events:none;z-index:1}
+.sparkles i{position:absolute;width:16px;height:16px;background:#fff6d6;clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);filter:drop-shadow(0 0 6px #ffd36b) drop-shadow(0 0 2px #fff);opacity:0;animation:twinkle 2.4s ease-in-out infinite}
+.sparkles i:nth-child(1){top:14px;left:58%}
+.sparkles i:nth-child(2){top:46%;right:22px;width:12px;height:12px;animation-delay:.8s}
+.sparkles i:nth-child(3){bottom:12px;left:14px;width:13px;height:13px;animation-delay:1.6s}
+.sparkles i:nth-child(4){bottom:16px;right:30%;width:10px;height:10px;animation-delay:2s}
+@keyframes shine-spin{to{--spin:360deg}}
+@keyframes shine-glow{50%{box-shadow:0 0 30px rgba(232,168,62,.55),0 0 8px rgba(255,243,196,.35)}}
+@keyframes shine-sweep{0%,30%{background-position:150% 0}70%,100%{background-position:-50% 0}}
+@keyframes shine-text{to{background-position:-200% 0}}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+@media (prefers-reduced-motion:reduce){.card.shine,.card.shine::after,.card.shine .fl-name{animation:none}.card.shine::after{display:none}.sparkles i{animation:none;opacity:.8}}
 .fl-more h4{margin:4px 0 6px;font:700 12px/1 var(--head);text-transform:uppercase;letter-spacing:.08em;color:var(--lav)}
 .wk{margin:10px 0 2px;font:700 13px/1.2 var(--head);letter-spacing:.04em;color:var(--yellow)}
 .loc{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
@@ -355,7 +372,8 @@ function flavorCard(p, o = {}) {
     more = `<div class="fl-more"><h4>Where it dropped${S.zipPt ? ` within ${S.miles} mi of ${S.zip}` : ''}</h4>${rows || '<div class="city">No store drops listed yet.</div>'}
       ${recent.length > max ? `<button class="toggle-more" data-all="${p.i}">Show all ${recent.length} drops</button>` : ''}</div>`;
   }
-  return `<article class="card${open ? ' open' : ''}" data-p="${p.i}">
+  const shine = /^(no till kings|wizard trees)$/i.test((p.collab || '').trim());
+  return `<article class="card${open ? ' open' : ''}${shine ? ' shine' : ''}" data-p="${p.i}">${shine ? '<span class="sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i></span>' : ''}
     <div style="display:flex">
       <button class="fl-head" data-toggle="${p.i}" aria-expanded="${open}">
         <div class="fl-main">
