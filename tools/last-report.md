@@ -1,12 +1,12 @@
 # Release update: Week of 2026-11-16 (RE-RUN: merged into the week already published, nothing removed)
 
-- RE-RUN added: OG Nation | Lynwood (new store: Super Boof, Gusher Pearlz, Mendo Zeclair, Space Ballz, Viper Cookies, Crunch Berry, GG4)
-- Orders window: 2026-11-09T08:00:00.000Z to 2026-11-15T16:43:30.701Z
-- Stores in this week: 60 (orders read this run: 66)
+- RE-RUN added: nothing new
+- Orders window: 2026-11-09T08:00:00.000Z to 2026-11-15T16:48:00.134Z
+- Stores in this week: 59 (orders read this run: 66)
 - New flavors (newly listed on the live menu Sunday 2026-11-01): Gas Gimlet x Wizard Trees, Crunch Berries x Flight Path, Super Zlushie, FunDip x Preferred Gardens, Glue 41 x Flight Path, Zu Dream x Sirius, Blue Andeze x LA Family Farms, Durban Snacks x Preferred Gardens, Foam x Preferred Gardens, Pineapple Znackz x Preferred Gardens
 - Flavors of the Week: Gas Gimlet x Wizard Trees (tier 2, 33 stores); Pineapple Znackz x Preferred Gardens (tier 8, 24 stores)
 - New-flavor source: Sunday 2026-11-01: owner-provided list
-- Deals updated on 1 store rows
+- Deals updated on 0 store rows
 
 ## Drops
 - All Stiiizy Shops | California (GO/ANNIVERSARY DEAL: B2G1 / HANGOVER DEAL: 25% off / AGED PROMO: B1G1 50% off |Q4| 25% off Wednesday): Zu Dream, Glue 41, Blue Andeze, VS11, Pineapple Znackz, Blue Dream
@@ -15,7 +15,7 @@
 - OTC | Vista (25% OFF Fridays, Saturdays, & Sundays): Gas Gimlet, Crunch Berries, Super Zlushie, Zu Dream, Glue 41, Durban Snacks, Pineapple Znackz, Foam, VS11, Grape Pop, Royal Burger, Zeclair Ballz
 - Higher Ground | Lynwood (40% OFF FRIDAY & SUNDAY): Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Peanut Butter Breath, Double Cup, Sin Mint
 - Higher Ground | San Bernardino (40% OFF FRIDAY & SUNDAY): Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Orange Pops, Double Cup, V-Lish, Sin Mint, Pearl OG, Black Magic
-- OG Nation | Maywood (50% off Flavorade every Monday): Black Magic, Dog Juice, Neon Panther, Randy Cain, Peanut Butter Breath
+- OG Nation | Maywood (50% off Flavorade every Monday): Black Magic, Dog Juice, Neon Panther, Randy Cain, Peanut Butter Breath, Super Boof, Gusher Pearlz, Mendo Zeclair, Space Ballz, Viper Cookies, Crunch Berry, GG4
 - Higher Ground | Baldwin Park (40% OFF FRIDAY & SUNDAY): Black Magic, Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Peanut Butter Breath, Double Cup, Sin Mint
 - Higher Ground | Moreno Valley (40% OFF FRIDAY & SUNDAY): Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Peanut Butter Breath, Double Cup, Sin Mint
 - Ashe Society | Pomona (OCT 1: 50% off Daily): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41
@@ -68,7 +68,6 @@
 - Dr. Greenthumbs | La Mesa (30% off Flavorade Friday): British Smoothie, Chem Brulee, Cheeze Breath, Pink Pineapple, Planetary Tangie, Blueberry Jack, Zeclair Ballz, Royal Burger, Grape Pop, FunDip, Hash Burger, VS11, Grape Gusher, Runtz
 - Packs OC | Santa Ana (40% off Fridays): Pink Pineapple, Planetary Tangie, Zeclair Ballz, Royal Burger, FunDip, VS11
 - Old G Kush | Los Angeles: Gas Gimlet, Super Zlushie, FunDip, Glue 41, Blue Andeze, Durban Snacks, Foam, Blue Puzzy, Durban Dream, Super Boof, Double Cup, Pearl OG
-- OG Nation | Lynwood (50% off Flavorade every Monday): Super Boof, Gusher Pearlz, Mendo Zeclair, Space Ballz, Viper Cookies, Crunch Berry, GG4
 
 ## Skipped orders
 - PO 51888: never listed: 510 Consultants
