@@ -482,7 +482,8 @@ function fotmContent() {
   const picked = new Map(); // product -> newest week it was picked
   ws.forEach(w => FOTM[w].map(findP).filter(Boolean).forEach(p => { if (!picked.has(p)) picked.set(p, w); }));
   if (!picked.size) return h + empty('No picks yet', 'Flavors of the Week are added every Sunday.');
-  const list = [...picked.keys()].sort((a, b) => fotwTier(a) - fotwTier(b) || b.recentStores - a.recentStores || a.name.localeCompare(b.name));
+  // Priority tier first; within a tie, the most recently picked comes first (then most stores, then A-Z).
+  const list = [...picked.keys()].sort((a, b) => fotwTier(a) - fotwTier(b) || picked.get(b).localeCompare(picked.get(a)) || b.recentStores - a.recentStores || a.name.localeCompare(b.name));
   return h + `<div class="grid">${list.map(p => `<div><div class="fotm-wk">Picked week of ${fmt(picked.get(p))}</div>${flavorCard(p, { compact: true })}</div>`).join('')}</div>`;
 }
 function weekPicksBlock() {
