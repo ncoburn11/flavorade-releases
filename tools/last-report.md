@@ -1,49 +1,49 @@
 # Release update: Week of 2026-11-16 (RE-RUN: merged into the week already published, nothing removed)
 
 - RE-RUN added: nothing new
-- Orders window: 2026-11-09T08:00:00.000Z to 2026-11-15T16:48:00.134Z
+- Orders window: 2026-11-09T08:00:00.000Z to 2026-11-15T22:11:49.737Z
 - Stores in this week: 59 (orders read this run: 66)
 - New flavors (newly listed on the live menu Sunday 2026-11-01): Gas Gimlet x Wizard Trees, Crunch Berries x Flight Path, Super Zlushie, FunDip x Preferred Gardens, Glue 41 x Flight Path, Zu Dream x Sirius, Blue Andeze x LA Family Farms, Durban Snacks x Preferred Gardens, Foam x Preferred Gardens, Pineapple Znackz x Preferred Gardens
 - Flavors of the Week: Gas Gimlet x Wizard Trees (tier 2, 33 stores); Pineapple Znackz x Preferred Gardens (tier 8, 24 stores)
 - New-flavor source: Sunday 2026-11-01: owner-provided list
-- Deals updated on 0 store rows
+- Deals updated on 588 store rows
 
 ## Drops
-- All Stiiizy Shops | California (GO/ANNIVERSARY DEAL: B2G1 / HANGOVER DEAL: 25% off / AGED PROMO: B1G1 50% off |Q4| 25% off Wednesday): Zu Dream, Glue 41, Blue Andeze, VS11, Pineapple Znackz, Blue Dream
-- Perfect Union Northside | Sacramento (10% OFF on Mondays): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41, Durban Snacks, Foam, Zu Dream, Pineapple Znackz
+- All Stiiizy Shops | California (25% OFF WEDNESDAY): Zu Dream, Glue 41, Blue Andeze, VS11, Pineapple Znackz, Blue Dream
+- Perfect Union Northside | Sacramento (10% OFF MONDAY): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41, Durban Snacks, Foam, Zu Dream, Pineapple Znackz
 - Sundial Collective | Redding: FunDip, Super Zlushie, Crunch Berries
-- OTC | Vista (25% OFF Fridays, Saturdays, & Sundays): Gas Gimlet, Crunch Berries, Super Zlushie, Zu Dream, Glue 41, Durban Snacks, Pineapple Znackz, Foam, VS11, Grape Pop, Royal Burger, Zeclair Ballz
+- OTC | Vista (25% OFF FRIDAY, SATURDAY & SUNDAY): Gas Gimlet, Crunch Berries, Super Zlushie, Zu Dream, Glue 41, Durban Snacks, Pineapple Znackz, Foam, VS11, Grape Pop, Royal Burger, Zeclair Ballz
 - Higher Ground | Lynwood (40% OFF FRIDAY & SUNDAY): Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Peanut Butter Breath, Double Cup, Sin Mint
 - Higher Ground | San Bernardino (40% OFF FRIDAY & SUNDAY): Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Orange Pops, Double Cup, V-Lish, Sin Mint, Pearl OG, Black Magic
-- OG Nation | Maywood (50% off Flavorade every Monday): Black Magic, Dog Juice, Neon Panther, Randy Cain, Peanut Butter Breath, Super Boof, Gusher Pearlz, Mendo Zeclair, Space Ballz, Viper Cookies, Crunch Berry, GG4
+- OG Nation | Maywood (50% OFF MONDAY): Black Magic, Dog Juice, Neon Panther, Randy Cain, Peanut Butter Breath, Super Boof, Gusher Pearlz, Mendo Zeclair, Space Ballz, Viper Cookies, Crunch Berry, GG4
 - Higher Ground | Baldwin Park (40% OFF FRIDAY & SUNDAY): Black Magic, Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Peanut Butter Breath, Double Cup, Sin Mint
 - Higher Ground | Moreno Valley (40% OFF FRIDAY & SUNDAY): Gas Gimlet, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Peanut Butter Breath, Double Cup, Sin Mint
-- Ashe Society | Pomona (OCT 1: 50% off Daily): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41
-- Ashe Society | San Bernardino (OCT 1: 50% off Daily): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41
-- LA Kush | Los Angeles (DAILY MARCH HAPPY HOUR: BOGO 40% off Storewide 6am-10am & 8pm-10pm): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Zu Dream, Glue 41, Durban Snacks, Foam, Pineapple Znackz, Orange Pops
-- GOAT Global | Westwood (40% off Flavorade Wednesdays): Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Orange Pops, Super Boof, Glue 41, Zu Dream, Super Zlushie, Gas Gimlet
+- Ashe Society | Pomona (50% OFF DAILY): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41
+- Ashe Society | San Bernardino (50% OFF DAILY): Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Glue 41
+- LA Kush | Los Angeles: Gas Gimlet, Crunch Berries, Super Zlushie, FunDip, Zu Dream, Glue 41, Durban Snacks, Foam, Pineapple Znackz, Orange Pops
+- GOAT Global | Westwood (40% OFF WEDNESDAY): Blue Andeze, Durban Snacks, Foam, Pineapple Znackz, Orange Pops, Super Boof, Glue 41, Zu Dream, Super Zlushie, Gas Gimlet
 - Santee Project | Santee: Super Zlushie, Foam, Diamond Opalz, Orange Pops, Durban Snacks, Glue 41, Zu Dream, Crunch Berries, Gas Gimlet, Pineapple Znackz
-- Wellgreens Balboa | San Diego (25% off Thursday): Gas Gimlet, Zu Dream, Glue 41, Durban Snacks, Foam, Pineapple Znackz
+- Wellgreens Balboa | San Diego (25% OFF THURSDAY): Gas Gimlet, Zu Dream, Glue 41, Durban Snacks, Foam, Pineapple Znackz
 - Bluefire | Merced: Blueberry Jack, Pink Pineapple, Chem Brulee, British Smoothie
-- Wellgreens Mission Valley | San Diego (25% off Thursday): Pineapple Znackz, Foam, Durban Snacks, Glue 41, Gas Gimlet
-- OTC | Artesia (25% OFF Fridays, Saturdays, & Sundays): Gas Gimlet, Crunch Berries, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Pineapple Znackz, Super Boof, V-Lish, Pearl OG, Super Zlushie
-- Evergreen | Santa Ana (20% off Flavorade Friday + Vuze): Gas Gimlet, Black Magic
-- Jungle Boys | La Mesa (25% off Sunday - Flav / 25% off Thursday - Flav & Vuze / GENERAL BOGO 50% off Mondays): Glue 41, Zu Dream, Gas Gimlet, Durban Snacks, Foam, Pineapple Znackz
-- OTC | Costa Mesa (25% OFF Fridays, Saturdays, & Sundays): Gas Gimlet, Crunch Berries, Super Zlushie, Zu Dream, Glue 41, Pearl OG, V-Lish, Super Boof, Peanut Butter Breath, Pineapple Znackz, Blue Andeze
-- High Season | Adelanto (30% off Flavorade Fridays): Dog Juice, Hash Burger, Neon Panther, White Cherries, Randy Cain, Peanut Butter Breath, Sin Mint
-- OTC | Oxnard (25% OFF Fridays, Saturdays, & Sundays): Super Boof, Blue Dream, Cherry Biscotti, Orange Pops, Blue Andeze, Gas Gimlet, Super Zlushie, Glue 41
-- OTC | Eagle Rock (25% OFF Fridays, Saturdays, & Sundays): Foam, Glue 41, Crunch Berries, Gas Gimlet, Zu Dream
+- Wellgreens Mission Valley | San Diego (25% OFF THURSDAY): Pineapple Znackz, Foam, Durban Snacks, Glue 41, Gas Gimlet
+- OTC | Artesia (25% OFF FRIDAY, SATURDAY & SUNDAY): Gas Gimlet, Crunch Berries, Zu Dream, Glue 41, Blue Andeze, Durban Snacks, Pineapple Znackz, Super Boof, V-Lish, Pearl OG, Super Zlushie
+- Evergreen | Santa Ana (20% OFF FRIDAY): Gas Gimlet, Black Magic
+- Jungle Boys | La Mesa (25% OFF SUNDAY): Glue 41, Zu Dream, Gas Gimlet, Durban Snacks, Foam, Pineapple Znackz
+- OTC | Costa Mesa (25% OFF FRIDAY, SATURDAY & SUNDAY): Gas Gimlet, Crunch Berries, Super Zlushie, Zu Dream, Glue 41, Pearl OG, V-Lish, Super Boof, Peanut Butter Breath, Pineapple Znackz, Blue Andeze
+- High Season | Adelanto: Dog Juice, Hash Burger, Neon Panther, White Cherries, Randy Cain, Peanut Butter Breath, Sin Mint
+- OTC | Oxnard (25% OFF FRIDAY, SATURDAY & SUNDAY): Super Boof, Blue Dream, Cherry Biscotti, Orange Pops, Blue Andeze, Gas Gimlet, Super Zlushie, Glue 41
+- OTC | Eagle Rock (25% OFF FRIDAY, SATURDAY & SUNDAY): Foam, Glue 41, Crunch Berries, Gas Gimlet, Zu Dream
 - SafePort | Oxnard: FunDip, Pink Pineapple, Cheeze Breath, Chem Brulee, VS11, Crunch Berries, Grape Pop, Zeclair Ballz, Royal Burger, Blueberry Jack, Planetary Tangie
-- OTC Miramar | San Diego (25% OFF Fridays, Saturdays, & Sundays): Gummy Pops, Peanut Butter Breath, Randy Cain, White Cherries, Neon Panther, Hash Burger, Durban Dream, Glue 41, Crunch Berries, Gas Gimlet, FunDip
-- OTC | National City (25% OFF Fridays, Saturdays, & Sundays): Dutch Tiger, Mendo Zeclair, Jalisco Runtz, Neonz, Pineapple Zoap, Lime Malt, Glue 41, Super Zlushie, Crunch Berries, Gas Gimlet
-- Wellgreens | Lemon Grove (25% off Thursday): Pineapple Znackz, Foam, Durban Snacks, Blue Andeze, Glue 41, Zu Dream, Gas Gimlet
+- OTC Miramar | San Diego (25% OFF FRIDAY, SATURDAY & SUNDAY): Gummy Pops, Peanut Butter Breath, Randy Cain, White Cherries, Neon Panther, Hash Burger, Durban Dream, Glue 41, Crunch Berries, Gas Gimlet, FunDip
+- OTC | National City (25% OFF FRIDAY, SATURDAY & SUNDAY): Dutch Tiger, Mendo Zeclair, Jalisco Runtz, Neonz, Pineapple Zoap, Lime Malt, Glue 41, Super Zlushie, Crunch Berries, Gas Gimlet
+- Wellgreens | Lemon Grove (25% OFF THURSDAY): Pineapple Znackz, Foam, Durban Snacks, Blue Andeze, Glue 41, Zu Dream, Gas Gimlet
 - Cannasseurs Club | North Hollywood: Pearl OG, V-Lish, Gas Gimlet, Super Boof, Orange Pops, Pineapple Znackz, Foam, Durban Snacks, Blue Andeze, Glue 41, Zu Dream
-- Wellgreens | Vista (25% off Thursday): Pearl OG, V-Lish, Super Boof, Peanut Butter Breath, Pineapple Znackz, Foam, Durban Snacks, Blue Andeze, Glue 41, Zu Dream, Gas Gimlet
+- Wellgreens | Vista (25% OFF THURSDAY): Pearl OG, V-Lish, Super Boof, Peanut Butter Breath, Pineapple Znackz, Foam, Durban Snacks, Blue Andeze, Glue 41, Zu Dream, Gas Gimlet
 - Connected | Stockton: Super Zlushie, Crunch Berries, Gas Gimlet, Pineapple Znackz, Glue 41, FunDip
-- Symbiotic | Sacramento (50% Off Sundays ($30 OTD)): Crunch Berries, Gas Gimlet, Pineapple Znackz, Foam, Durban Snacks, Glue 41, Zu Dream, FunDip, Super Zlushie
-- Perfect Union | San Diego (10% OFF on Mondays): Runtz, Zoap Remix, Planetary Tangie, Grape Pop, Crunch Berries
-- OTC | Manteca (25% OFF Fridays, Saturdays, & Sundays): Pearl OG, V-Lish, Super Boof, Grape Gusher, Durban Snacks, Gas Gimlet, Neon Panther, Blue Andeze, Glue 41, Zu Dream
-- OTC | Stockton (25% OFF Fridays, Saturdays, & Sundays): Pineapple Znackz, Foam, Durban Snacks, Glue 41, Zu Dream, Super Zlushie, Crunch Berries, Gas Gimlet, Royal Burger, Zeclair Ballz, VS11, Grape Pop
+- Symbiotic | Sacramento (50% OFF SUNDAY ($30 OTD)): Crunch Berries, Gas Gimlet, Pineapple Znackz, Foam, Durban Snacks, Glue 41, Zu Dream, FunDip, Super Zlushie
+- Perfect Union | San Diego (10% OFF MONDAY): Runtz, Zoap Remix, Planetary Tangie, Grape Pop, Crunch Berries
+- OTC | Manteca (25% OFF FRIDAY, SATURDAY & SUNDAY): Pearl OG, V-Lish, Super Boof, Grape Gusher, Durban Snacks, Gas Gimlet, Neon Panther, Blue Andeze, Glue 41, Zu Dream
+- OTC | Stockton (25% OFF FRIDAY, SATURDAY & SUNDAY): Pineapple Znackz, Foam, Durban Snacks, Glue 41, Zu Dream, Super Zlushie, Crunch Berries, Gas Gimlet, Royal Burger, Zeclair Ballz, VS11, Grape Pop
 - Puff-N-Dash | City Heights: Chem Brulee, Pink Pineapple, Blueberry Jack, British Smoothie
 - Mainstage | Sacramento: Gas Gimlet, Glue 41, Durban Snacks, Foam, Pineapple Znackz
 - Club W | Modesto: Chem Brulee, Pink Pineapple, Blueberry Jack, British Smoothie
@@ -57,16 +57,16 @@
 - March & Ash | Sabre Springs: Chem Brulee, Cheeze Breath, Pink Pineapple, Blueberry Jack, Royal Burger, Grape Pop, British Smoothie, VS11
 - Packs | Stockton: Chem Brulee, Cheeze Breath, Pink Pineapple, Blueberry Jack, Royal Burger, Grape Pop, British Smoothie, VS11
 - March & Ash | Vista: Chem Brulee, Cheeze Breath, Pink Pineapple, Blueberry Jack, Royal Burger, British Smoothie
-- OTC Lounge | Palm Springs (25% OFF Fridays, Saturdays, & Sundays): Zeclair Ballz, Royal Burger, Grape Pop, VS11, Super Zlushie, Pineapple Znackz, Gas Gimlet, Crunch Berries, Zu Dream, Glue 41, Blue Andeze, Foam, Orange Pops
-- Leaf Society | El Centro (30% off Thursdays): Super Zlushie, Gas Gimlet, Crunch Berries, FunDip, Zu Dream, Glue 41, Durban Snacks, Pineapple Znackz
-- Perfect Union | Banning (10% OFF on Mondays): Planetary Tangie, Zeclair Ballz, Grape Pop, Crunch Berries
+- OTC Lounge | Palm Springs (25% OFF FRIDAY, SATURDAY & SUNDAY): Zeclair Ballz, Royal Burger, Grape Pop, VS11, Super Zlushie, Pineapple Znackz, Gas Gimlet, Crunch Berries, Zu Dream, Glue 41, Blue Andeze, Foam, Orange Pops
+- Leaf Society | El Centro (30% OFF THURSDAY): Super Zlushie, Gas Gimlet, Crunch Berries, FunDip, Zu Dream, Glue 41, Durban Snacks, Pineapple Znackz
+- Perfect Union | Banning (10% OFF MONDAY): Planetary Tangie, Zeclair Ballz, Grape Pop, Crunch Berries
 - Sweet Flower | Chico: Black Magic, Zeclair Ballz, Grape Pop, Crunch Berries, Super Zlushie, FunDip
 - California Street Cannabis Co. | San Francisco: Durban Dream, Runtz
 - Cali Love | Weaverville: Dog Juice, Hash Burger, Neon Panther, White Cherries, Randy Cain, Zmelonz, Zoap Remix, Champa Runtz, Blue Puzzy, Peanut Butter Breath, Super Boof
 - Sundial Collective | Red Bluff: Crunch Berries, Super Zlushie, FunDip
-- Packs SGV | El Monte (50% off Fridays): Apricot Peelz, Pineapple Zoap, Neonz, Durban Dream, Runtz, Gas Gimlet, Black Magic, Dog Juice, Neon Panther, White Cherries, Randy Cain, Peanut Butter Breath, Purple Pleazure, Pink Pineapple, Planetary Tangie, Zeclair Ballz, Royal Burger, FunDip, VS11
-- Dr. Greenthumbs | La Mesa (30% off Flavorade Friday): British Smoothie, Chem Brulee, Cheeze Breath, Pink Pineapple, Planetary Tangie, Blueberry Jack, Zeclair Ballz, Royal Burger, Grape Pop, FunDip, Hash Burger, VS11, Grape Gusher, Runtz
-- Packs OC | Santa Ana (40% off Fridays): Pink Pineapple, Planetary Tangie, Zeclair Ballz, Royal Burger, FunDip, VS11
+- Packs SGV | El Monte (50% OFF FRIDAY): Apricot Peelz, Pineapple Zoap, Neonz, Durban Dream, Runtz, Gas Gimlet, Black Magic, Dog Juice, Neon Panther, White Cherries, Randy Cain, Peanut Butter Breath, Purple Pleazure, Pink Pineapple, Planetary Tangie, Zeclair Ballz, Royal Burger, FunDip, VS11
+- Dr. Greenthumbs | La Mesa (30% OFF FRIDAY): British Smoothie, Chem Brulee, Cheeze Breath, Pink Pineapple, Planetary Tangie, Blueberry Jack, Zeclair Ballz, Royal Burger, Grape Pop, FunDip, Hash Burger, VS11, Grape Gusher, Runtz
+- Packs OC | Santa Ana (40% OFF FRIDAY): Pink Pineapple, Planetary Tangie, Zeclair Ballz, Royal Burger, FunDip, VS11
 - Old G Kush | Los Angeles: Gas Gimlet, Super Zlushie, FunDip, Glue 41, Blue Andeze, Durban Snacks, Foam, Blue Puzzy, Durban Dream, Super Boof, Double Cup, Pearl OG
 
 ## Skipped orders
