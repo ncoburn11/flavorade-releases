@@ -89,7 +89,12 @@ function dealFinder(sheet) {
   const ALIAS = { offthechartsotc: 'otc', offthecharts: 'otc', hpcoxnard: 'cannable', hpc: 'cannable', stiiizy: 'allstiiizyshops' };
   const chainLoc = s => /\ball\b|over|norcal|northern california|locations/i.test(s);
   const rk = r => { let k = norm(String(r[2]).replace(/\(.*?\)/g, '').replace(/\b(all|shops)\b/gi, '')); return ALIAS[k] || ALIAS[norm(r[2])] || k; };
-  const nameMatch = (r, shop) => { const k = rk(r), s = norm(shop); return k && (s.startsWith(k) || k.startsWith(s) || (k === 'allstiiizyshops' && s.includes('stiiizy'))); };
+  // Names must match on whole words ("High Seas" must not match "High Season"): one name's words are the start of the other's.
+  const words = x => String(x || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w && w !== 'all' && w !== 'shops' && w !== 'the');
+  const ALIAS_W = { otc: ['otc'], cannable: ['cannable'], allstiiizyshops: ['stiiizy'] };
+  const rWords = r => ALIAS_W[rk(r)] || words(r[2]);
+  const nameMatch = (r, shop) => { const a = rWords(r), b = words(shop); if (!a.length || !b.length) return false;
+    const n = Math.min(a.length, b.length); for (let i = 0; i < n; i++) if (a[i] !== b[i]) return false; return true; };
   const isChain = r => chainLoc(r[3] || '') || /\b(all|shops)\b/i.test(r[2]);
   return (shop, city) => {
     const c = norm(city), cand = rowsD.filter(r => nameMatch(r, shop));
