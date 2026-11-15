@@ -171,7 +171,8 @@ if (opt.deals) {
   for (const d of drops.concat(R.drops)) { const deal = find(d[1], d[2]); if (deal !== d[3]) { d[3] = deal; dealsApplied++; } }
 }
 // Owner's fixed deals (rules.dealOverrides) always win over the sheet
-for (const d of drops.concat(R.drops)) { const o = (rules.dealOverrides || {})[d[1] + '|' + d[2]]; if (o && o !== d[3]) { d[3] = o; dealsApplied++; } }
+const DO = rules.dealOverrides || {};
+for (const d of drops.concat(R.drops)) { const k = d[1] + '|' + d[2]; if (k in DO && DO[k] !== d[3]) { d[3] = DO[k]; dealsApplied++; } }
 
 /* ---------- new flavors, from the live menu repo's history ---------- */
 // Flavors newly listed on the live menu on Sunday W (vs the Sunday before) are "New flavors"

@@ -213,8 +213,13 @@
     ]
   },
   "dealOverrides": {
-    "_doc": "Store | City -> deal text that always wins over the deals sheet",
+    "_doc": "Store | City -> deal text that always wins over the deals sheet (\"\" = never show a deal)",
     "All Stiiizy Shops|California": "25% OFF on Wednesdays",
-    "Jungle Boys|La Mesa": "25% OFF on Sundays"
+    "Jungle Boys|La Mesa": "25% OFF on Sundays",
+    "Perfect Union|San Diego": "10% OFF on Mondays",
+    "Perfect Union|Banning": "10% OFF on Mondays",
+    "LA Kush|Los Angeles": "",
+    "Leaf Society|El Centro": "30% off Thursdays",
+    "Big Sur Canna + Botanicals|Carmel": "25% off Fridays"
   }
 }
