@@ -103,6 +103,7 @@ function classify(o) {
   }
   const s = stores[lic];
   if (!s) return { hold: `Unknown store license ${lic}: ${vname}, ${v.vendorAddress || ''} (look it up, add to stores.json)` };
+  if (s.untilWeek && WEEK > s.untilWeek) return { hold: `${s.shop} | ${s.city} (${lic}) was listed under that name only through the Week of ${s.untilWeek}${s.untilNote ? ': ' + s.untilNote : ''}. Ask the owner for the new name and deal, update stores.json, then re-run` };
   return { shops: [[s.shop, s.city]] };
 }
 
