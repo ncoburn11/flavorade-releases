@@ -173,6 +173,7 @@ if (opt.deals) {
 // Owner's fixed deals (rules.dealOverrides) always win over the sheet
 const DO = rules.dealOverrides || {};
 for (const d of drops.concat(R.drops)) { const k = d[1] + '|' + d[2]; if (k in DO && DO[k] !== d[3]) { d[3] = DO[k]; dealsApplied++; } }
+for (const d of drops.concat(R.drops)) d[3] = L.normDeal(d[3]); // one deal style everywhere
 
 /* ---------- new flavors, from the live menu repo's history ---------- */
 // Flavors newly listed on the live menu on Sunday W (vs the Sunday before) are "New flavors"

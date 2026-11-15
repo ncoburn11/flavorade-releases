@@ -105,8 +105,30 @@ function dealFinder(sheet) {
       // a single row for exactly this store name (location written differently, e.g. Packs SGV) - exact name only
       || (spec.length === 1 && rWords(spec[0]).join('') === words(shop).join('') && rowsD.filter(x => rk(x) === rk(spec[0])).length === 1 ? spec[0] : null)
       || cand.find(isChain);
-    return pick ? String(pick[4]).replace(/\s+/g, ' ').trim() : '';
+    if (!pick) return '';
+    let t = String(pick[4]).replace(/\s+/g, ' ').trim();
+    // no day in the deal text: add the sheet's "Day(s) Valid" (all 7 days = DAILY)
+    const days = String(pick[5] || '').split(',').map(x => x.trim()).filter(Boolean);
+    if (!/(MON|TUES|WEDNES|THURS|FRI|SATUR|SUN)DAY|DAILY/i.test(t) && days.length) t += ' ' + (days.length >= 7 ? 'DAILY' : days.join(' & '));
+    return t;
   };
 }
 
-module.exports = { dealFinder, ROOT, norm, fixCollab, parseProduct, caDate, releaseWeek, cityFromAddress, readOrders, groupDeliveries, loadData, saveData };
+// One deal style for the whole page, like Higher Ground's "40% OFF FRIDAY & SUNDAY":
+// all caps, singular days, no "ON"/"EVERY"/"FLAVORADE"/"+ VUZE".
+function normDeal(x) {
+  if (!x) return '';
+  let t = String(x).toUpperCase().replace(/\s+/g, ' ').trim();
+  // keep only the Flavorade part of deals that list other brands ("... (FLAVORADE) / ... (VUZE)", "... / 25% OFF SIRIUS SATURDAYS")
+  const parts = t.split(/\s+\/\/?\s+/);
+  if (parts.length > 1) { const keep = parts.filter(p => !/\b(VUZE|SIRIUS|CASUAL)\b/.test(p) || /\bFLAVORADE\b/.test(p)); if (keep.length) t = keep.join(' / '); }
+  return t.replace(/\(\s*FLAVORADE\s*\)/g, '').replace(/\bFLAV\b/g, '')
+    .replace(/(\d+%)\s+(?!OFF\b)/g, '$1 OFF ')
+    .replace(/\bFLAVORADE\b\s*/g, '').replace(/\bEVERY\s+/g, '')
+    .replace(/\bON\s+(?=(MON|TUES|WEDNES|THURS|FRI|SATUR|SUN)DAY)/g, '')
+    .replace(/\b(MON|TUES|WEDNES|THURS|FRI|SATUR|SUN)DAYS\b/g, '$1DAY')
+    .replace(/\s*\+\s*VUZE\b/g, '').replace(/\bDEAL\s+(?=(MON|TUES|WEDNES|THURS|FRI|SATUR|SUN)DAY)/g, '')
+    .replace(/\s+-\s*(?=\/|$)/g, '').replace(/,\s*&/g, ' &').replace(/\s+/g, ' ').trim();
+}
+
+module.exports = { normDeal, dealFinder, ROOT, norm, fixCollab, parseProduct, caDate, releaseWeek, cityFromAddress, readOrders, groupDeliveries, loadData, saveData };
