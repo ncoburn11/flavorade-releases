@@ -102,7 +102,8 @@ function dealFinder(sheet) {
     const loc = r => { const l = norm(r[3] || ''); return l && (l.includes(c) || c.includes(l)); };
     const spec = cand.filter(r => !isChain(r));
     const pick = spec.find(loc)
-      || (spec.length === 1 && rowsD.filter(x => rk(x) === rk(spec[0])).length === 1 ? spec[0] : null)
+      // a single row for exactly this store name (location written differently, e.g. Packs SGV) - exact name only
+      || (spec.length === 1 && rWords(spec[0]).join('') === words(shop).join('') && rowsD.filter(x => rk(x) === rk(spec[0])).length === 1 ? spec[0] : null)
       || cand.find(isChain);
     return pick ? String(pick[4]).replace(/\s+/g, ' ').trim() : '';
   };
