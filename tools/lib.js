@@ -94,6 +94,7 @@ function dealFinder(sheet) {
   const ALIAS_W = { otc: ['otc'], cannable: ['cannable'], allstiiizyshops: ['stiiizy'] };
   const rWords = r => ALIAS_W[rk(r)] || words(r[2]);
   const nameMatch = (r, shop) => { const a = rWords(r), b = words(shop); if (!a.length || !b.length) return false;
+    if (a.join('') === b.join('')) return true; // same name, spacing/punctuation aside (Skunkmasters = Skunk Masters, Mark't = Markt)
     const n = Math.min(a.length, b.length); for (let i = 0; i < n; i++) if (a[i] !== b[i]) return false; return true; };
   const isChain = r => chainLoc(r[3] || '') || /\b(all|shops)\b/i.test(r[2]);
   return (shop, city) => {
