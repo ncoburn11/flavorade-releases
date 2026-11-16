@@ -36,7 +36,9 @@ It publishes the **Week of** the coming Monday.
 - **Deals:** from sheet `1U-1GkqFKb92WSr2AtFflDz_FgCciIZjsHdaUt7uPVE4`, tab "Current - 2026".
   - Use only rows where Brands includes Flavorade and Confirmed? is TRUE.
   - A store-specific row beats a chain-wide row.
-- **Area search** (`areas.js`, owner-approved): searching a big city or nickname shows every store in its county. It also combines with other words at the start or end ("Zmelonz SD", "LA No Till"), unless the whole phrase is part of a real name ("La Mesa", "LA Kush").
+- **Area search** (`areas.js`, owner-approved): searching a big city or nickname shows every store in its county. It also combines with other words at the start or end ("Zmelonz SD", "LA No Till"), unless what was typed is the start of a real name.
+  - A multi-word search that starts a real strain, collab, store or city name is searched as one phrase: "LA P" finds LA POP, "La M" La Mesa, "LA K" LA Kush.
+  - Short nicknames (LA, SD, SF, SJ, OC, IE) only ever match whole words, never the start of "Lake", "Lavender", "Lathrop".
   - San Diego/SD = San Diego Co.; Los Angeles/LA = LA Co.; San Francisco/SF/Frisco; San Jose/SJ = Santa Clara Co.; Sacramento/Sac.
   - OC = Orange Co.; IE = Riverside + San Bernardino; Bay Area = the 9 Bay Area counties; SoCal = the 10 Southern California counties.
   - "LA" alone means Los Angeles County only, never La Mesa, La Habra, Lathrop or other names that start with "La".

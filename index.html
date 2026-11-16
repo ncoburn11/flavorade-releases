@@ -391,9 +391,8 @@ const area = () => {
   const mk = (a, rest) => ({ counties: new Set(a.counties), socal: a.counties.every(c => AREAS.socal.includes(c)), rest });
   const whole = AREAS.areas.find(x => x.names.includes(q));
   if (whole) return (areaHit = mk(whole, ''));
-  if (!NAMES) NAMES = [...new Set(products.flatMap(p => [p.name, p.collab]).concat(drops.flatMap(d => [d.shop, d.city])))]
-    .map(x => ' ' + norm(x || '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim());
-  if (NAMES.some(n => n.includes(' ' + q))) return null;
+  // Never split a real name, even half typed: "la p" is LA POP, "la m" La Mesa, "la k" LA Kush (see phrase()).
+  if (phrase()) return null;
   let best = null;
   AREAS.areas.forEach(x => x.names.forEach(n => {
     let rest = null;
@@ -403,15 +402,31 @@ const area = () => {
   }));
   return (areaHit = best ? mk(best.x, best.rest) : null);
 };
+// A multi-word search that is the start of a real name (strain, collab, store or city) is searched as one phrase,
+// so "LA P" finds LA POP, never "Pear Lato" (P... La...) or "Shasta Lake".
+let phraseQ = null, phraseHit = null;
+function phrase() {
+  const q = norm(S.q).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (q === phraseQ) return phraseHit;
+  phraseQ = q; phraseHit = null;
+  if (!q.includes(' ')) return null;
+  if (!NAMES) NAMES = [...new Set(products.flatMap(p => [p.name, p.collab]).concat(drops.flatMap(d => [d.shop, d.city])))]
+    .map(x => ' ' + norm(x || '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim());
+  return (phraseHit = NAMES.some(n => n.includes(' ' + q)) ? q : null);
+}
 const inArea = d => {
   const a = area(); if (!a) return true;
   const chain = AREAS.chains[d.city];
   if (chain) return chain === 'all' || (chain === 'socal' && a.socal);
   return a.counties.has(CITY_COUNTY.get(d.city));
 };
-const terms = () => { const ar = area(); let q = ar ? ar.rest : norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
+const terms = () => { const ar = area(); if (!ar && phrase()) return [phrase()]; let q = ar ? ar.rest : norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
 // A search word must match the start of a word ("sac" finds Sacramento, not "Kush Sack"... and "la" not "Black").
-const wordHit = (hay, x) => hay.startsWith(x) || hay.includes(' ' + x) || hay.includes('-' + x) || hay.includes('(' + x) || hay.includes('|' + x);
+const WHOLE = new Set(AREAS.areas.flatMap(a => a.names).filter(n => n.length <= 2)); // "la", "sd", "oc"...: whole word only
+const flat = new Map(); // hay without punctuation, for phrase searches ("dr greenthumbs" finds "Dr. Greenthumbs")
+const phraseHay = h => { let f = flat.get(h); if (f == null) { f = ' ' + h.replace(/[^a-z0-9|]+/g, ' ').replace(/\s+/g, ' '); flat.set(h, f); } return f; };
+const wordHit = (hay, x) => x.includes(' ') ? phraseHay(hay).includes(' ' + x) : WHOLE.has(x) ? new RegExp('(^|[^a-z0-9])' + x + '($|[^a-z0-9])').test(hay)
+  : hay.startsWith(x) || hay.includes(' ' + x) || hay.includes('-' + x) || hay.includes('(' + x) || hay.includes('|' + x);
 const hits = (hay, t) => t.every(x => wordHit(hay, x));
 const matchP = (p, t) => hits(p.hay, t);
 const matchPStores = (p, t) => hits(p.hay + p.hayStores, t);
@@ -437,9 +452,15 @@ function hl(text) {
   // One pass over the raw text, so a term can never match inside an inserted <mark> tag.
   const t = terms().filter(x => x.length >= 2).sort((a, b) => b.length - a.length);
   if (!t.length) return esc(text);
-  const re = new RegExp(t.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'ig');
+  // Only at the start of a word, the same way the search matches ("la" marks "La Mesa", never "Flavorade").
+  // (A capture group instead of a lookbehind, which older iPhones don't support.)
+  const re = new RegExp('(^|[^A-Za-z0-9])(' + t.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (WHOLE.has(x) ? '(?![A-Za-z0-9])' : '')).join('|') + ')', 'ig');
   const raw = String(text); let out = '', last = 0, m;
-  while ((m = re.exec(raw))) { out += esc(raw.slice(last, m.index)) + '<mark>' + esc(m[0]) + '</mark>'; last = m.index + m[0].length; }
+  while ((m = re.exec(raw))) {
+    const start = m.index + m[1].length;
+    out += esc(raw.slice(last, start)) + '<mark>' + esc(m[2]) + '</mark>'; last = start + m[2].length;
+    if (!m[0].length) re.lastIndex++;
+  }
   return out + esc(raw.slice(last));
 }
 const heart = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
@@ -561,7 +582,13 @@ function viewFlavors() {
   // tasting-notes search: comma-separated tastes match ANY; words inside one taste must all appear
   const tastes = S.tq.split(',').map(x => norm(x).split(/\s+/).filter(Boolean)).filter(x => x.length);
   const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm((p.name || '') + ' ' + (p.notes || '')).includes(w)));
-  let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p) && (!(S.zipPt || area()) || p.drops.some(near)));
+  // A strain or collab name typed in full shows just that ("LA POP" is LA POP, not every "Pop").
+  const qn = norm(S.q).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const exact = !area() && qn && live.some(p => norm(p.name).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim() === qn);
+  // With an area in the search, store names only count for that area's stores.
+  const textHit = p => exact ? norm(p.name).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim() === qn
+    : area() ? matchP(p, t) || p.drops.some(d => near(d) && hits(d.hay, t)) : matchPStores(p, t);
+  let list = live.filter(p => textHit(p) && typeFilter(p) && collabFilter(p) && noteHit(p) && (!(S.zipPt || area()) || p.drops.some(near)));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
