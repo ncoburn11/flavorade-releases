@@ -13,50 +13,57 @@ The Release Finder lives in this repo and is served by GitHub Pages at:
 
 ```html
 <iframe id="flavorade-finder" src="https://ncoburn11.github.io/flavorade-releases/"
-  title="Flavorade Release Finder" loading="lazy" allow="geolocation"
+  title="Flavorade Release Finder" allow="geolocation"
   style="width:100%;height:1400px;border:0;display:block"></iframe>
 <script>
 (function () {
   var ORIGIN = 'https://ncoburn11.github.io';
   var frame = document.getElementById('flavorade-finder');
+  // A small copy of the finder's search bar and tabs, pinned by the browser itself (no lag while scrolling).
+  var bar = document.createElement('iframe');
+  bar.src = ORIGIN + '/flavorade-releases/?bar';
+  bar.title = 'Flavorade search';
+  bar.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:0;border:0;display:block;z-index:998;visibility:hidden;background:#30143D';
+  document.body.appendChild(bar);
+  var barEnd = null, barHeight = 0, shown = false, top = -1;
   // Height of the site's own header while it is pinned to the top of the screen (0 when it is not).
   function headerHeight() {
-    var h = document.querySelector('header#header, .Header, header');
+    var h = document.querySelector('header#header, header.header, header');
     if (!h) return 0;
     var pos = getComputedStyle(h).position;
     if (pos !== 'fixed' && pos !== 'sticky') return 0;
-    return Math.max(0, h.getBoundingClientRect().bottom);
+    return Math.max(0, Math.round(h.getBoundingClientRect().bottom));
   }
-  // Tell the finder where it sits on screen so it can keep its search bar at the top.
-  var queued = false;
-  function send() {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(function () {
-      queued = false;
-      if (frame.contentWindow) frame.contentWindow.postMessage({
-        flavoradeTop: frame.getBoundingClientRect().top,
-        flavoradeOffset: headerHeight()
-      }, ORIGIN);
-    });
+  function update() {
+    var r = frame.getBoundingClientRect(), hh = headerHeight();
+    if (hh !== top) { top = hh; bar.style.top = hh + 'px'; }
+    // Show it once the finder's own tabs reach the bottom of the pinned copy, so the tabs line up exactly.
+    var show = barEnd !== null && barHeight > 0 && r.top + barEnd <= hh + barHeight && r.bottom - barHeight > hh;
+    if (show !== shown) { shown = show; bar.style.visibility = show ? 'visible' : 'hidden'; }
   }
   window.addEventListener('message', function (e) {
     if (e.origin !== ORIGIN || !e.data) return;
-    if (e.data.flavoradeHeight) { frame.style.height = e.data.flavoradeHeight + 'px'; send(); }
-    if (typeof e.data.flavoradeScrollTo === 'number') {
-      var y = window.scrollY + frame.getBoundingClientRect().top + e.data.flavoradeScrollTo - headerHeight();
-      if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'smooth' });
+    var d = e.data;
+    if (e.source === frame.contentWindow) {
+      if (d.flavoradeHeight) frame.style.height = d.flavoradeHeight + 'px';
+      if (typeof d.flavoradeBarEnd === 'number') barEnd = d.flavoradeBarEnd;
+      if (typeof d.flavoradeScrollTo === 'number') {
+        var y = window.scrollY + frame.getBoundingClientRect().top + d.flavoradeScrollTo - headerHeight() - barHeight;
+        if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    } else if (e.source === bar.contentWindow && d.flavoradeBarHeight) {
+      barHeight = d.flavoradeBarHeight; bar.style.height = barHeight + 'px';
     }
+    update();
   });
-  window.addEventListener('scroll', send, { passive: true });
-  window.addEventListener('resize', send);
-  frame.addEventListener('load', send);
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
 })();
 </script>
 ```
 
 The frame grows and shrinks to fit the page automatically, so customers never see a second scrollbar.
-The script also tells the finder where it sits on screen, so its search bar and tabs stay pinned just under the site header while customers scroll.
+The script also adds a small copy of the search bar and tabs, pinned by the browser just under the site header once customers scroll past the real one (no lag). Both copies stay in sync.
 
 ## Weekly updates (automatic)
 

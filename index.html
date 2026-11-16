@@ -55,7 +55,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* sticky controls */
 .controls{position:sticky;top:0;z-index:10;background:rgba(48,20,61,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .in-frame body{min-height:0}
-.controls.embed-pin{position:relative;will-change:transform}
+.bar-mode,.bar-mode body{background:#30143D;background-image:none;min-height:0}
+.bar-mode body>*:not(.controls){display:none!important}
+.bar-mode .controls{position:static;background:#30143D}
 .controls .search input{padding-top:10px;padding-bottom:10px;font-size:16px}
 .controls .wrap{padding-top:12px;padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
 .search{position:relative}
@@ -106,6 +108,7 @@ main{padding-bottom:44px}
 .sec-title h2{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.015em;line-height:1.02;font-size:clamp(26px,6.4vw,34px);color:#FFFFFF;margin:0}
 .sec-title h2 span{color:var(--yellow)}
 .sec-title small{color:var(--lav);font-size:13px;text-align:right}
+.sec-title select.chip{flex:none;align-self:center;min-height:38px;font-size:11.5px;letter-spacing:.08em;padding:0 32px 0 16px;background-position:right 12px center}
 .grid{display:grid;gap:10px}
 @media(min-width:640px){.grid.two{grid-template-columns:1fr 1fr}}
 /* flavor card */
@@ -220,7 +223,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
   <div class="wrap">
     <h1><span>Flavorade</span> <span>Releases.</span></h1>
     <p class="warn">Flavors sell out fast!<br>Call your shop to confirm before visiting.</p>
-    <p class="sub">Search any flavor, taste, or store. <b id="updated"></b></p>
+    <p class="sub">Search any flavor, collab, store, or city. <b id="updated"></b></p>
   </div>
 </header>
 
@@ -273,17 +276,52 @@ const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fmt = w => { const [, m, d] = w.split('-'); return MONTHS[+m - 1] + ' ' + (+d); };
 
+/* ---------- pinned bar copy (?bar) ----------
+   On flavoradeextracts.com the Squarespace code puts a second, small copy of this page (?bar) in a
+   position:fixed frame at the top of the screen and shows it once the real bar scrolls up to it. The browser
+   pins it itself, so it never lags behind the finger. It shows only the search box and tabs and drives the main
+   finder frame directly (same site, so it can call window.flavoradeAPI in that frame). */
+if (/[?&]bar\b/.test(location.search) && window.parent !== window) { initBar(); return; }
+function initBar() {
+  document.documentElement.classList.add('bar-mode');
+  const box = $('#searchBox'), q = $('#q');
+  $('.controls .wrap').prepend(box);
+  let main = null;
+  const api = () => {
+    try { if (main && main.flavoradeAPI) return main.flavoradeAPI; } catch (e) { main = null; }
+    try { for (let i = 0; i < parent.frames.length; i++) { try { const f = parent.frames[i]; if (f !== window && f.flavoradeAPI) { main = f; return f.flavoradeAPI; } } catch (e) {} } } catch (e) {}
+    return null;
+  };
+  const sync = st => {
+    if (!st) { const a = api(); if (!a) return; st = a.state(); }
+    if (document.activeElement !== q && q.value !== st.q) q.value = st.q;
+    box.classList.toggle('has', !!q.value);
+    document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === st.tab));
+    $('#favCount').textContent = st.favs || '';
+  };
+  let t;
+  q.addEventListener('input', () => { box.classList.toggle('has', !!q.value); clearTimeout(t); t = setTimeout(() => { const a = api(); if (a) a.setQuery(q.value, true); }, 120); });
+  q.addEventListener('keydown', e => { if (e.key === 'Enter') q.blur(); });
+  box.querySelector('.clear').addEventListener('click', () => { q.value = ''; box.classList.remove('has'); const a = api(); if (a) a.setQuery('', true); q.focus(); });
+  $('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); const a = api(); if (b && a) a.setTab(b.dataset.tab); });
+  (function hook() { const a = api(); if (a) { a.subscribe(sync); sync(); } else setTimeout(hook, 250); })();
+  const post = () => parent.postMessage({ flavoradeBarHeight: Math.ceil(document.body.getBoundingClientRect().height) }, '*');
+  if ('ResizeObserver' in window) new ResizeObserver(post).observe(document.body);
+  post();
+}
+
 /* ---------- model ---------- */
 const products = R.products.map(([name, collab, type, notes], i) => ({
   i, name, collab, type, notes, drops: [], firstNew: null,
-  hay: norm([name, collab, type, notes, collab ? 'x ' + collab : 'flavorade', collab.replace(/\s+/g, ''), name.replace(/\s+/g, '')].join(' '))
+  // top search matches strain name and collab only; tasting notes are searched only by the All Flavors notes box
+  hay: norm([name, collab, collab ? 'x ' + collab : 'flavorade', collab.replace(/\s+/g, ''), name.replace(/\s+/g, '')].join(' '))
 }));
 const allWeeks = R.drops.map(d => d[0]).sort();
 const newestWeek = allWeeks[allWeeks.length - 1] || '';
 const addDays = (w, n) => { const d = new Date(w + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const CUTOFF = newestWeek ? addDays(newestWeek, -182) : '';   // show 6 months of drops
 const drops = R.drops.filter(d => d[0] >= CUTOFF).map(([week, shop, city, deal, ids], i) => {
-  const d = { i, week, shop, city, deal, ids, hay: norm([shop, city, deal].join(' ')) };
+  const d = { i, week, shop, city, deal, ids, hay: norm([shop, city].join(' ')) }; // store name and city
   ids.forEach(id => products[id].drops.push(d));
   return d;
 });
@@ -326,6 +364,7 @@ const store = {
 };
 const favKey = p => (p.collab + '|' + p.name).toLowerCase();
 let favs = new Set(store.get('flavorade-favs', []));
+const subs = []; // pinned bar copies listening for changes
 const S = { tab: 'week', q: '', type: '', collab: '', city: '', sort: 'new', limit: 40, open: new Set(), weeks: new Set(), pick: 'week', tq: '', weekAll: new Set(), miles: 10 };
 const params = new URLSearchParams(location.hash.slice(1));
 if (params.get('tab')) S.tab = ({ stores: 'all', fotm: 'week' })[params.get('tab')] || params.get('tab');
@@ -398,7 +437,7 @@ function flavorCard(p, o = {}) {
         <div class="fl-main">
           <div class="fl-name">${hl(p.name)}</div>
           <div class="fl-by">${hl(by)}</div>
-          ${p.notes ? `<div class="fl-notes">${hl(p.notes)}</div>` : ''}
+          ${p.notes ? `<div class="fl-notes">${esc(p.notes)}</div>` : ''}
           <div class="fl-meta">
             ${!o.compact && p.isNew ? '<span class="pill new">NEW</span>' : ''}
             ${p.type ? `<span class="pill ${typeClass(p.type)}">${esc(p.type)}</span>` : ''}
@@ -433,7 +472,6 @@ function filterBar(kind) {
     h += `<select class="chip" data-sel="collab" aria-label="Brand collab"><option value="">All collabs</option>${collabs.map(c => `<option${S.collab === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
   }
   if (kind === 'flavors') h = h.replace('<div class="filters">', '<div class="filters has-notes">');
-  if (kind === 'flavors') h += `<select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select>`;
   if (kind === 'flavors') h += `<div class="notesq-wrap"><b>Search by Strain or Tasting Note</b><label class="notesq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="notesq" type="search" value="${esc(S.tq)}" placeholder="Try &ldquo;Kiwi&rdquo;, &ldquo;Onions&rdquo;, or your favorite Flavorade" aria-label="Search by strain or tasting note" autocomplete="off"></label></div>`;
   return h + '</div>';
 }
@@ -492,8 +530,8 @@ function viewFlavors() {
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
   let h = filterBar('flavors');
-  h += `<div class="sec-title"><h2>All flavors</h2><small>${list.length} of ${live.length}</small></div>`;
-  h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q || S.tq) + '”', 'Try another taste, like mango, gas, candy or onions.');
+  h += `<div class="sec-title"><h2>All flavors</h2><select class="chip" data-sel="sort" aria-label="Sort"><option value="new"${S.sort === 'new' ? ' selected' : ''}>Newest drops</option><option value="az"${S.sort === 'az' ? ' selected' : ''}>A–Z</option><option value="pop"${S.sort === 'pop' ? ' selected' : ''}>Most stores</option></select></div>`;
+  h += list.length ? `<div class="grid">${list.slice(0, S.limit).map(flavorCard).join('')}</div>` : empty('Nothing matches “' + esc(S.q || S.tq) + '”', S.tq ? 'Try another taste, like mango, gas, candy or onions.' : 'Try a flavor, collab, store or city. To search tastes, use the tasting note box above.');
   if (list.length > S.limit) h += `<button class="more-btn" data-more>Show ${Math.min(40, list.length - S.limit)} more →</button>`;
   return h;
 }
@@ -563,7 +601,7 @@ function viewAll() {
   const shown = weeks.map(w => [w, drops.filter(d => d.week === w && hit(d))]).filter(([, ds]) => ds.length);
   const total = shown.reduce((n, [, ds]) => n + ds.length, 0);
   h += `<div class="sec-title"><h2>All Time <span>· last 6 months</span></h2><small>${total} drop${total === 1 ? '' : 's'} · newest first</small></div>`;
-  if (!shown.length) return h + empty('No drops found', 'Try a flavor (Black Magic), a taste (mango), a store, or a city.');
+  if (!shown.length) return h + empty('No drops found', 'Try a flavor (Black Magic), a collab, a store, or a city.');
   h += shown.map(([w, ds], n) => {
     const isOpen = S.weeks.has(w) || (filtering ? n < 3 : n === 0);
     const nNew = (R.newFlavors[w] || []).length;
@@ -594,6 +632,7 @@ function render() {
   const p = new URLSearchParams(); if (S.tab !== 'week') p.set('tab', S.tab); if (S.q) p.set('q', S.q);
   const url = p.toString() ? '#' + p : location.pathname + location.search;
   if (S.push) { history.pushState(null, '', url); S.push = false; } else history.replaceState(null, '', url);
+  subs.forEach(f => { try { f({ q: qEl.value, tab: S.tab, favs: favs.size }); } catch (e) {} });
 }
 window.addEventListener('popstate', () => {
   const hp = new URLSearchParams(location.hash.slice(1));
@@ -602,7 +641,7 @@ window.addEventListener('popstate', () => {
 
 const qEl = $('#q'); qEl.value = S.q;
 if (innerWidth < 480) qEl.placeholder = 'Blueberry, KushCo, San Diego...';
-let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); if (searchInBar) scrollToBar(); }, 120); });
+let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
 $('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
 $('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; S.push = true; render(); scrollToBar(); });
 
@@ -686,10 +725,10 @@ nearClear.addEventListener('click', () => { zipEl.value = ''; applyZip(''); rend
    page does) and position:sticky can't work. The Squarespace code sends us where the iframe sits on screen
    ({flavoradeTop, flavoradeOffset} = iframe top and the height of any fixed site header), and we slide the
    bar down by the same amount, stopping at the end of the results. */
-let embedPin = false;
 const bar = $('.controls'), barMark = $('#barMark'), searchBox = $('#searchBox'), searchSlot = $('.searchwrap');
-// Once the bar is pinned, the search box rides along in it; it goes back to its spot when the bar unpins.
-// The bar's extra height is cancelled with a negative margin so nothing below it jumps.
+const inFrame = window.parent !== window;
+// Standalone page: the bar is position:sticky, and once it pins the search box rides along in it (it goes back
+// to its spot when the bar unpins). The bar's extra height is cancelled with a negative margin so nothing jumps.
 let searchInBar = false;
 function setSearchInBar(on) {
   if (on === searchInBar || searchBox.contains(document.activeElement)) return;
@@ -705,33 +744,22 @@ function setSearchInBar(on) {
     bar.style.marginBottom = '';
   }
 }
-let lastPin = null;
-function pinBar(top, offset) {
-  lastPin = [top, offset];
-  if (!embedPin) { embedPin = true; bar.classList.add('embed-pin'); }
-  const natural = barMark.offsetTop;
-  const end = $('#view').offsetTop + $('#view').offsetHeight - bar.offsetHeight;
-  const y = Math.max(0, Math.min(offset - top - natural, end - natural));
-  bar.style.transform = y > 0 ? `translate3d(0,${y}px,0)` : '';
-  setSearchInBar(y > 0);
-}
-if (window.parent !== window) {
-  window.addEventListener('message', e => {
-    const d = e.data;
-    if (e.source !== window.parent || !d || typeof d.flavoradeTop !== 'number') return;
-    pinBar(d.flavoradeTop, Math.max(0, Number(d.flavoradeOffset) || 0));
-  });
-}
-// Standalone page (and old embed code): the bar is position:sticky; just move the search box in and out.
 let scrollQueued = false;
 window.addEventListener('scroll', () => {
-  if (embedPin || scrollQueued) return;
+  if (inFrame || scrollQueued) return;
   scrollQueued = true;
   requestAnimationFrame(() => { scrollQueued = false; setSearchInBar(barMark.getBoundingClientRect().top < 0); });
 }, { passive: true });
+// Used by the pinned bar copy on flavoradeextracts.com.
+window.flavoradeAPI = {
+  state: () => ({ q: qEl.value, tab: S.tab, favs: favs.size }),
+  setQuery(v, fromBar) { qEl.value = v; S.q = v.trim(); S.limit = 40; render(); if (fromBar) scrollToBar(); },
+  setTab(t) { const b = document.querySelector(`.tabs [data-tab="${t}"]`); if (b) b.click(); },
+  subscribe(fn) { subs.push(fn); }
+};
 // After a tab change, bring the bar back to the top of the screen (asks the Squarespace page to scroll when embedded).
 function scrollToBar() {
-  if (embedPin) { parent.postMessage({ flavoradeScrollTo: barMark.offsetTop }, '*'); return; }
+  if (inFrame) { parent.postMessage({ flavoradeScrollTo: barMark.offsetTop + bar.offsetHeight }, '*'); return; }
   const y = barMark.getBoundingClientRect().top + scrollY;
   if (scrollY > y) window.scrollTo({ top: y, behavior: 'smooth' });
 }
@@ -743,8 +771,7 @@ render();
 if (window.parent !== window && 'ResizeObserver' in window) {
   document.documentElement.classList.add('in-frame');
   new ResizeObserver(() => {
-    parent.postMessage({ flavoradeHeight: Math.ceil(document.body.getBoundingClientRect().height) }, '*');
-    if (lastPin) pinBar(lastPin[0], lastPin[1]);
+    parent.postMessage({ flavoradeHeight: Math.ceil(document.body.getBoundingClientRect().height), flavoradeBarEnd: barMark.offsetTop + bar.offsetHeight }, '*');
   }).observe(document.body);
 }
 })();
