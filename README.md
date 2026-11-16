@@ -16,15 +16,47 @@ The Release Finder lives in this repo and is served by GitHub Pages at:
   title="Flavorade Release Finder" loading="lazy" allow="geolocation"
   style="width:100%;height:1400px;border:0;display:block"></iframe>
 <script>
+(function () {
+  var ORIGIN = 'https://ncoburn11.github.io';
+  var frame = document.getElementById('flavorade-finder');
+  // Height of the site's own header while it is pinned to the top of the screen (0 when it is not).
+  function headerHeight() {
+    var h = document.querySelector('header#header, .Header, header');
+    if (!h) return 0;
+    var pos = getComputedStyle(h).position;
+    if (pos !== 'fixed' && pos !== 'sticky') return 0;
+    return Math.max(0, h.getBoundingClientRect().bottom);
+  }
+  // Tell the finder where it sits on screen so it can keep its search bar at the top.
+  var queued = false;
+  function send() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      if (frame.contentWindow) frame.contentWindow.postMessage({
+        flavoradeTop: frame.getBoundingClientRect().top,
+        flavoradeOffset: headerHeight()
+      }, ORIGIN);
+    });
+  }
   window.addEventListener('message', function (e) {
-    if (e.data && e.data.flavoradeHeight) {
-      document.getElementById('flavorade-finder').style.height = e.data.flavoradeHeight + 'px';
+    if (e.origin !== ORIGIN || !e.data) return;
+    if (e.data.flavoradeHeight) { frame.style.height = e.data.flavoradeHeight + 'px'; send(); }
+    if (typeof e.data.flavoradeScrollTo === 'number') {
+      var y = window.scrollY + frame.getBoundingClientRect().top + e.data.flavoradeScrollTo - headerHeight();
+      if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'smooth' });
     }
   });
+  window.addEventListener('scroll', send, { passive: true });
+  window.addEventListener('resize', send);
+  frame.addEventListener('load', send);
+})();
 </script>
 ```
 
 The frame grows and shrinks to fit the page automatically, so customers never see a second scrollbar.
+The script also tells the finder where it sits on screen, so its search bar and tabs stay pinned just under the site header while customers scroll.
 
 ## Weekly updates (automatic)
 

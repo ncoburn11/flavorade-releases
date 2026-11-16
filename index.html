@@ -53,7 +53,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .drow-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .tabheart{width:13px;height:13px;vertical-align:-1px}
 /* sticky controls */
-.controls{position:sticky;top:0;z-index:10;background:rgba(48,20,61,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.controls{position:sticky;top:0;z-index:10;background:rgba(48,20,61,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.in-frame body{min-height:0}
+.controls.embed-pin{position:relative;will-change:transform}
+.controls .search input{padding-top:10px;padding-bottom:10px;font-size:16px}
 .controls .wrap{padding-top:12px;padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
 .search{position:relative}
 .search input{width:100%;font:inherit;font-size:17px;padding:13px 46px;border-radius:30px;border:1.5px solid var(--line);background:rgba(255,255,255,.07);color:#fff;outline:none}
@@ -239,6 +242,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
     <p class="near-msg" id="nearMsg" hidden></p>
   </div>
 <div class="wrap" id="fotw"></div>
+<div id="barMark"></div>
 <div class="controls">
   <div class="wrap">
     <nav class="tabs" role="tablist">
@@ -598,9 +602,9 @@ window.addEventListener('popstate', () => {
 
 const qEl = $('#q'); qEl.value = S.q;
 if (innerWidth < 480) qEl.placeholder = 'Blueberry, KushCo, San Diego...';
-let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
+let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); if (searchInBar) scrollToBar(); }, 120); });
 $('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
-$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; S.push = true; render(); window.scrollTo({ top: $('.controls').getBoundingClientRect().top + scrollY, behavior: 'smooth' }); });
+$('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; S.push = true; render(); scrollToBar(); });
 
 function onViewClick(e) {
   const el = e.target.closest('button'); if (!el) return;
@@ -677,11 +681,71 @@ $('#locate').addEventListener('click', () => {
 nearClear.addEventListener('click', () => { zipEl.value = ''; applyZip(''); render(); zipEl.focus(); });
 
 
+/* Keep the search bar pinned to the top when embedded.
+   On flavoradeextracts.com the iframe is as tall as this page, so the iframe never scrolls (the Squarespace
+   page does) and position:sticky can't work. The Squarespace code sends us where the iframe sits on screen
+   ({flavoradeTop, flavoradeOffset} = iframe top and the height of any fixed site header), and we slide the
+   bar down by the same amount, stopping at the end of the results. */
+let embedPin = false;
+const bar = $('.controls'), barMark = $('#barMark'), searchBox = $('#searchBox'), searchSlot = $('.searchwrap');
+// Once the bar is pinned, the search box rides along in it; it goes back to its spot when the bar unpins.
+// The bar's extra height is cancelled with a negative margin so nothing below it jumps.
+let searchInBar = false;
+function setSearchInBar(on) {
+  if (on === searchInBar || searchBox.contains(document.activeElement)) return;
+  searchInBar = on;
+  if (on) {
+    const slotH = searchSlot.offsetHeight, barH = bar.offsetHeight, pt = parseFloat(getComputedStyle(searchSlot).paddingTop) || 0;
+    $('.controls .wrap').prepend(searchBox);
+    searchSlot.style.paddingTop = (pt + slotH - searchSlot.offsetHeight) + 'px';
+    bar.style.marginBottom = (barH - bar.offsetHeight) + 'px';
+  } else {
+    searchSlot.prepend(searchBox);
+    searchSlot.style.paddingTop = '';
+    bar.style.marginBottom = '';
+  }
+}
+let lastPin = null;
+function pinBar(top, offset) {
+  lastPin = [top, offset];
+  if (!embedPin) { embedPin = true; bar.classList.add('embed-pin'); }
+  const natural = barMark.offsetTop;
+  const end = $('#view').offsetTop + $('#view').offsetHeight - bar.offsetHeight;
+  const y = Math.max(0, Math.min(offset - top - natural, end - natural));
+  bar.style.transform = y > 0 ? `translate3d(0,${y}px,0)` : '';
+  setSearchInBar(y > 0);
+}
+if (window.parent !== window) {
+  window.addEventListener('message', e => {
+    const d = e.data;
+    if (e.source !== window.parent || !d || typeof d.flavoradeTop !== 'number') return;
+    pinBar(d.flavoradeTop, Math.max(0, Number(d.flavoradeOffset) || 0));
+  });
+}
+// Standalone page (and old embed code): the bar is position:sticky; just move the search box in and out.
+let scrollQueued = false;
+window.addEventListener('scroll', () => {
+  if (embedPin || scrollQueued) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => { scrollQueued = false; setSearchInBar(barMark.getBoundingClientRect().top < 0); });
+}, { passive: true });
+// After a tab change, bring the bar back to the top of the screen (asks the Squarespace page to scroll when embedded).
+function scrollToBar() {
+  if (embedPin) { parent.postMessage({ flavoradeScrollTo: barMark.offsetTop }, '*'); return; }
+  const y = barMark.getBoundingClientRect().top + scrollY;
+  if (scrollY > y) window.scrollTo({ top: y, behavior: 'smooth' });
+}
+
 render();
 
-/* Let a parent page (Squarespace) size the embed to fit. */
+/* Let a parent page (Squarespace) size the embed to fit. Inside the frame the page has no minimum height
+   (100vh would be the frame's own height, so it could grow but never shrink back after a search). */
 if (window.parent !== window && 'ResizeObserver' in window) {
-  new ResizeObserver(() => parent.postMessage({ flavoradeHeight: document.documentElement.scrollHeight }, '*')).observe(document.body);
+  document.documentElement.classList.add('in-frame');
+  new ResizeObserver(() => {
+    parent.postMessage({ flavoradeHeight: Math.ceil(document.body.getBoundingClientRect().height) }, '*');
+    if (lastPin) pinBar(lastPin[0], lastPin[1]);
+  }).observe(document.body);
 }
 })();
 </script>
