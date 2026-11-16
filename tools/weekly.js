@@ -230,6 +230,12 @@ const noNotes = [...new Set(newIds.concat(created))].filter(i => !R.products[i][
 if (noNotes.length) out.push(`- NEED TASTING NOTES: ${noNotes.map(i => R.products[i][0] + '|' + R.products[i][1]).join(', ')}`);
 out.push(`- Deals updated on ${dealsApplied} store rows`);
 if (report.newC11.size) { out.push('', '## NEW C11 licenses for owner review (not shown on the page)'); for (const [l, n] of report.newC11) out.push(`- ${l}: ${n}`); }
+{ // area search (areas.js): every city on the page should belong to a county, or be listed as a chain area
+  const A = {}; try { require('vm').runInNewContext(require('fs').readFileSync(require('path').join(__dirname, '..', 'areas.js'), 'utf8'), { window: A }); } catch (e) {}
+  const known = new Set([].concat(...Object.values((A.AREAS || {}).counties || {}), Object.keys((A.AREAS || {}).chains || {}), (A.AREAS || {}).noArea || []));
+  const missing = [...new Set(drops.map(r => r[2]).filter(c => !known.has(c)))];
+  if (missing.length) { out.push('', '## CITY NOT IN areas.js (look up its county and add it, or ask the owner; until then it is left out of area searches like "SD" or "LA")'); missing.forEach(c => out.push('- ' + c + ': ' + drops.filter(r => r[2] === c).map(r => r[1]).join(', '))); }
+}
 if (report.holds.length) { out.push('', '## Held back (needs a decision)'); report.holds.forEach(h => out.push('- ' + h)); }
 out.push('', '## Drops', ...drops.map(r => `- ${r[1]} | ${r[2]}${r[3] ? ' (' + r[3] + ')' : ''}: ${r[4].map(i => R.products[i][0]).join(', ')}`));
 if (report.skipped.length) out.push('', '## Skipped orders', ...report.skipped.map(s => '- ' + s));

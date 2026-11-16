@@ -63,6 +63,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .search{position:relative}
 .search input{width:100%;font:inherit;font-size:17px;padding:13px 46px;border-radius:30px;border:1.5px solid var(--line);background:rgba(255,255,255,.07);color:#fff;outline:none}
 .search input::placeholder{color:var(--lav)}
+.search:not(.has) input{padding-right:16px} /* no clear button yet: give the example text the room */
+@media(max-width:380px){.search input::placeholder{font-size:15px}}
 .search input:focus{border-color:var(--yellow);background:rgba(255,255,255,.1)}
 .search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--lav)}
 .search .clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.12);border-radius:999px;width:34px;height:34px;font-size:18px;line-height:1;display:none;color:#fff}
@@ -230,7 +232,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 <div class="wrap searchwrap">
     <label class="search" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Try “Blueberry”, “No Till Kings”, or “San Diego”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, collabs, stores, or cities">
+      <input id="q" type="search" placeholder="Try “Zmelonz”, “No Till”, or “LA”" autocomplete="off" enterkeyhint="search" aria-label="Search flavors, collabs, stores, or cities">
       <button class="clear" type="button" aria-label="Clear search">×</button>
     </label>
     <div class="near" id="near">
@@ -267,6 +269,7 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 <script src="data.js"></script>
 <script src="geo.js"></script>
 <script src="flavors-of-the-month.js"></script>
+<script src="areas.js"></script>
 <script>
 (() => {
 const R = window.RELEASES;
@@ -373,7 +376,29 @@ if (params.get('q')) S.q = params.get('q');
 /* ---------- helpers ---------- */
 // Collab names count as one word, so "Kush Co" and "KushCo" (or "Wizard Trees" / "WizardTrees") search the same.
 const COLLAB_FIX = [...new Set(R.products.map(p => p[1]).filter(c => /\s/.test(c)))].map(c => [norm(c), norm(c).replace(/\s+/g, '')]);
-const terms = () => { let q = norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
+/* Area search: when the whole search is a big city or nickname (areas.js), show every store in that area instead of
+   matching words. "LA" means Los Angeles County only, never La Mesa / La Habra / Lancaster-by-spelling. */
+const AREAS = window.AREAS || { counties: {}, areas: [], socal: [], chains: {} };
+const CITY_COUNTY = new Map(); Object.entries(AREAS.counties).forEach(([c, cities]) => cities.forEach(x => CITY_COUNTY.set(x, c)));
+let areaQ = null, areaHit = null;
+const area = () => {
+  const q = norm(S.q).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (q === areaQ) return areaHit;
+  areaQ = q; areaHit = null;
+  const a = AREAS.areas.find(x => x.names.includes(q));
+  if (a) {
+    const counties = new Set(a.counties);
+    areaHit = { counties, socal: a.counties.every(c => AREAS.socal.includes(c)) };
+  }
+  return areaHit;
+};
+const inArea = d => {
+  const a = area(); if (!a) return true;
+  const chain = AREAS.chains[d.city];
+  if (chain) return chain === 'all' || (chain === 'socal' && a.socal);
+  return a.counties.has(CITY_COUNTY.get(d.city));
+};
+const terms = () => { if (area()) return []; let q = norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
 // A search word must match the start of a word ("sac" finds Sacramento, not "Kush Sack"... and "la" not "Black").
 const wordHit = (hay, x) => hay.startsWith(x) || hay.includes(' ' + x) || hay.includes('-' + x) || hay.includes('(' + x) || hay.includes('|' + x);
 const hits = (hay, t) => t.every(x => wordHit(hay, x));
@@ -393,7 +418,7 @@ const GEO = window.GEO || { stores: {}, zips: {} };
 const miles = (a, b) => { const r = x => x * Math.PI / 180, dLa = r(b[0] - a[0]), dLo = r(b[1] - a[1]);
   const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dLo / 2) ** 2; return 3958.8 * 2 * Math.asin(Math.sqrt(h)); };
 const distOf = d => { if (!S.zipPt) return null; const g = GEO.stores[d.shop + '|' + (d.city || '')]; return g ? miles(S.zipPt, g) : null; };
-const near = d => { if (!S.zipPt) return true; const m = distOf(d); return m != null && m <= S.miles; };
+const near = d => { if (!inArea(d)) return false; if (!S.zipPt) return true; const m = distOf(d); return m != null && m <= S.miles; };
 const byDist = (a, b) => (distOf(a) ?? 1e9) - (distOf(b) ?? 1e9);
 const miTag = d => { const m = distOf(d); return m == null ? '' : `<span class="mi">${m < 10 ? m.toFixed(1) : Math.round(m)} mi</span>`; };
 const weekTag = w => `Week of ${fmt(w)}`;
@@ -505,7 +530,7 @@ const suggest = `<p class="hint">Try: ${['mango', 'cherry', 'gas', 'candy', 'Pea
 /* ---------- views ---------- */
 function viewWeek() {
   const t = terms();
-  const newP = (R.newFlavors[latest] || []).map(id => products[id]).filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p));
+  const newP = (R.newFlavors[latest] || []).map(id => products[id]).filter(p => matchP(p, t) && typeFilter(p) && collabFilter(p) && (!area() || p.drops.some(d => d.week === latest && near(d))));
   const wkDrops = drops.filter(d => d.week === latest && near(d) &&
     (!t.length || hits(d.hay, t) || d.ids.some(id => matchP(products[id], t))));
   const shops = new Set(wkDrops.map(d => d.shop + d.city)).size;
@@ -525,7 +550,7 @@ function viewFlavors() {
   // tasting-notes search: comma-separated tastes match ANY; words inside one taste must all appear
   const tastes = S.tq.split(',').map(x => norm(x).split(/\s+/).filter(Boolean)).filter(x => x.length);
   const noteHit = p => !tastes.length || tastes.some(ws => ws.every(w => norm((p.name || '') + ' ' + (p.notes || '')).includes(w)));
-  let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p) && (!S.zipPt || p.drops.some(near)));
+  let list = live.filter(p => matchPStores(p, t) && typeFilter(p) && collabFilter(p) && noteHit(p) && (!(S.zipPt || area()) || p.drops.some(near)));
   if (S.sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name));
   else if (S.sort === 'pop') list.sort((a, b) => b.recentStores - a.recentStores || b.drops.length - a.drops.length);
   else list.sort((a, b) => b.last.localeCompare(a.last) || b.recentStores - a.recentStores);
@@ -614,7 +639,7 @@ function viewAll() {
 
 function viewSaved() {
   const t = terms();
-  const list = live.filter(p => favs.has(favKey(p)) && matchP(p, t)).sort((a, b) => b.last.localeCompare(a.last));
+  const list = live.filter(p => favs.has(favKey(p)) && matchP(p, t) && (!area() || p.drops.some(near))).sort((a, b) => b.last.localeCompare(a.last));
   let h = `<div class="sec-title"><h2>Your saved flavors</h2><small>Saved on this device</small></div>`;
   h += list.length ? `<div class="grid">${list.map(flavorCard).join('')}</div>`
     : empty('No saved flavors yet', 'Tap the heart on any flavor to save it here and see where it drops next.');
@@ -640,7 +665,6 @@ window.addEventListener('popstate', () => {
 });
 
 const qEl = $('#q'); qEl.value = S.q;
-if (innerWidth < 480) qEl.placeholder = innerWidth < 380 ? 'Blueberry, No Till Kings...' : 'Blueberry, No Till Kings, San Diego';
 let tmr; qEl.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(() => { S.q = qEl.value.trim(); S.limit = 40; render(); }, 120); });
 $('.search .clear').addEventListener('click', () => { qEl.value = ''; S.q = ''; render(); qEl.focus(); });
 $('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.limit = 40; S.push = true; render(); scrollToBar(); });

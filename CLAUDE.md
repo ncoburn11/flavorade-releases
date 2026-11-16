@@ -36,6 +36,12 @@ It publishes the **Week of** the coming Monday.
 - **Deals:** from sheet `1U-1GkqFKb92WSr2AtFflDz_FgCciIZjsHdaUt7uPVE4`, tab "Current - 2026".
   - Use only rows where Brands includes Flavorade and Confirmed? is TRUE.
   - A store-specific row beats a chain-wide row.
+- **Area search** (`areas.js`, owner-approved): searching only a big city or nickname shows every store in its county.
+  - San Diego/SD = San Diego Co.; Los Angeles/LA = LA Co.; San Francisco/SF/Frisco; San Jose/SJ = Santa Clara Co.; Sacramento/Sac.
+  - OC = Orange Co.; IE = Riverside + San Bernardino; Bay Area = the 9 Bay Area counties; SoCal = the 10 Southern California counties.
+  - "LA" alone means Los Angeles County only, never La Mesa, La Habra, Lathrop or other names that start with "La".
+  - "All Stiiizy Shops | California" shows on every area search; "Southern California" chain rows show on SoCal areas.
+  - South Bay (GOAT Global) = LA County; Nirvana (March & Ash) = San Diego County; St. Marysville (Wild Seed Wellness) = NorCal, in no area.
 - **Only 6 months of weeks are kept.** Older weeks are deleted on every run.
 
 ## Steps
@@ -56,6 +62,8 @@ It publishes the **Week of** the coming Monday.
      - Add it to `stores.json` as "Store | City", using the town from the address spelled out ("Sacramento", not "Sac").
      - Also save the store's 5-digit zip from the GrowFlow address as `"zip"` in `stores.json`. The near-me search uses it; `tools/geo.js` rebuilds `geo.js` on every real run.
      - Off The Charts is "OTC". A Higher Ground "RD ..." entity is "Higher Ground". Use the store's existing name if it already appears in `data.js`.
+   - **"CITY NOT IN areas.js":** add the city to its county in `areas.js` (look the county up from the store's address; never guess).
+     If it isn't one real city (a region or nickname), hold it and ask the owner. This is what makes area searches like "SD", "LA", "OC", "Bay Area" find the store.
    - **PMG, Perfect Union or Movocan "not recognized":** do NOT guess. Leave it held and ask the owner. Add their answer to `rules.json`.
    - **"NEED TASTING NOTES":** look each flavor up in sheet `1UVE-yAzlKXEOEK8U1_znxgEOAi7Pgcqs9pifJTkUX0Q`, tab "FA - Tasting Notes".
      - Read the whole tab: `rowCount` first, then chunks of at most 400 rows.
