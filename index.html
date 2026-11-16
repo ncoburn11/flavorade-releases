@@ -194,9 +194,12 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 @media(max-width:520px){.more-btn,.viewstores,.near .locate{font-size:13px;min-height:46px}}
 /* filter chips: smaller pills that fit on one row, no sideways scroll */
 .filters .chip{flex:1 1 auto;min-width:0;font-size:12px;letter-spacing:.08em;min-height:40px;padding:0 14px}
-.filters select.chip{flex:1 1 0;min-width:92px;padding-right:30px;background-position:right 12px center}
-@media(max-width:520px){.filters{gap:5px}.filters .chip{font-size:10.5px;letter-spacing:.05em;min-height:36px;padding:0 8px}.filters select.chip{padding-right:22px;background-position:right 8px center}}
-@media(max-width:360px){.filters{gap:4px}.filters .chip{font-size:9.5px;letter-spacing:.03em;padding:0 6px}.filters select.chip{padding-right:18px;background-position:right 6px center}}
+.filters select.chip{flex:1 0 auto;padding-right:30px;background-position:right 12px center}
+/* dropdowns size to their own label (never to the longest option) and never shrink, so the label is never cut off */
+.filters select.chip[data-sel=collab]{flex-basis:calc(7.6em + 50px)}
+.filters select.chip[data-sel=sort]{flex-basis:calc(8.7em + 50px)}
+@media(max-width:520px){.filters{gap:5px}.filters .chip{font-size:10.5px;letter-spacing:.05em;min-height:36px;padding:0 8px}.filters select.chip{padding-right:22px;background-position:right 8px center}.filters select.chip[data-sel=collab]{flex-basis:calc(7.3em + 36px)}.filters select.chip[data-sel=sort]{flex-basis:calc(8.4em + 36px)}}
+@media(max-width:360px){.filters{gap:4px}.filters .chip{font-size:9.5px;letter-spacing:.03em;padding:0 6px}.filters select.chip{padding-right:18px;background-position:right 6px center}.filters select.chip[data-sel=collab]{flex-basis:calc(7.1em + 30px)}.filters select.chip[data-sel=sort]{flex-basis:calc(8.2em + 30px)}}
 </style>
 </head>
 <body>
