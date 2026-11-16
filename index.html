@@ -10,7 +10,7 @@
 <style>
 /* Matches the Flavorade Community page: plum-to-purple gradient, warm gold accent, dark plum cards */
 :root{
-  --bg:#2b1640; --bg-2:#5e338a; --panel:#35213f; --panel-2:#43294f; --ticker:#d9c4ef; --btn:#ba4bc9; --btn-h:#a43bb3;
+  --bg:#2b1640; --bg-2:#5e338a; --panel:#35213f; --panel-2:#43294f; --btn:#ba4bc9; --btn-h:#a43bb3;
   --yellow:#e8a83e; --lav:#c58fde; --gray:#dadada; --ink:#fff; --line:rgba(197,143,222,.24);
   --head:Montserrat,"Helvetica Neue",Arial,sans-serif;
   --body:"Proxima Nova","DM Sans","Helvetica Neue",Arial,sans-serif;
@@ -21,13 +21,6 @@ html{-webkit-text-size-adjust:100%;background:var(--bg)}
 body{margin:0;min-height:100vh;background:radial-gradient(circle at 85% 0,rgba(232,168,62,.18),rgba(232,168,62,0) 600px) no-repeat,var(--bg) linear-gradient(135deg,var(--bg) 0%,#3f2160 45%,var(--bg-2) 100%) no-repeat;color:var(--ink);font:16px/1.5 var(--body)}
 button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:900px;margin:0 auto;padding:0 16px}
-/* drop ticker (same as the homepage marquee) */
-.ticker{background:var(--ticker);overflow:hidden;white-space:nowrap}
-.ticker .track{display:inline-flex;align-items:center;gap:28px;padding:10px 0;animation:tick 32s linear infinite}
-.ticker span{font:700 15px/1 var(--head);letter-spacing:.08em;color:#2b1640}
-.ticker img{height:26px;width:auto;display:block}
-@keyframes tick{to{transform:translateX(-50%)}}
-@media (prefers-reduced-motion:reduce){.ticker .track{animation:none}}
 /* hero (same pattern as "THE BEST / CURED RESIN.") */
 .hero{text-align:center;padding:34px 0 22px}
 .eyebrow{font:700 clamp(15px,3.6vw,20px)/1.2 var(--head);letter-spacing:.05em;color:var(--gray);margin:0;text-transform:uppercase}
@@ -199,9 +192,6 @@ mark{background:none;color:var(--yellow);text-decoration:underline;text-decorati
 </style>
 </head>
 <body>
-<div class="ticker" aria-label="New flavors dropping every Monday">
-  <div class="track" id="ticker"></div>
-</div>
 
 <header class="hero">
   <div class="wrap">
@@ -304,9 +294,6 @@ const weekPicks = [...new Set((FOTM[latest] || []).map(findP).filter(Boolean))];
 const collabs = [...new Set(live.map(p => p.collab || 'Flavorade'))].sort((a, b) => a === 'Flavorade' ? -1 : b === 'Flavorade' ? 1 : a.localeCompare(b));
 
 $('#updated').textContent = 'Updated for the week of ' + fmt(latest) + '.';
-{ const logo = 'https://images.squarespace-cdn.com/content/64e52cbc6169f2457a2eed79/1120bc5d-60f0-4a1e-89fd-e1c0bdd4ef77/Flavorade+Logo+%28Drool%29.png?content-type=image%2Fpng';
-  const unit = `<span>NEW FLAVORS DROPPING EVERY MONDAY</span><img src="${logo}" alt="">`;
-  $('#ticker').innerHTML = unit.repeat(8); }
 
 /* ---------- state ---------- */
 const store = {
