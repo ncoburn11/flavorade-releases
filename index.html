@@ -75,7 +75,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tabs button[aria-selected=true]{background:#F4B538;color:#30143D;border:1.5px solid #F4B538}
 .tabs .count{color:var(--yellow)}
 /* filters */
-.filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
+.filters{display:flex;flex-wrap:wrap;gap:6px;padding:14px 0 2px}
 .filters::-webkit-scrollbar{display:none}
 .filters.has-notes{flex-wrap:wrap;overflow:visible}
 .notesq-wrap{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;margin-top:4px}
@@ -191,7 +191,12 @@ footer b{color:#fff}
 mark{background:none;color:var(--yellow);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 /* phones: 13px / 46px pills */
-@media(max-width:520px){.more-btn,.viewstores,.near .locate,.chip{font-size:13px;min-height:46px}}
+@media(max-width:520px){.more-btn,.viewstores,.near .locate{font-size:13px;min-height:46px}}
+/* filter chips: smaller pills that fit on one row, no sideways scroll */
+.filters .chip{flex:1 1 auto;min-width:0;font-size:12px;letter-spacing:.08em;min-height:40px;padding:0 14px}
+.filters select.chip{flex:1 1 0;min-width:92px;padding-right:30px;background-position:right 12px center}
+@media(max-width:520px){.filters{gap:5px}.filters .chip{font-size:10.5px;letter-spacing:.05em;min-height:36px;padding:0 8px}.filters select.chip{padding-right:22px;background-position:right 8px center}}
+@media(max-width:360px){.filters{gap:4px}.filters .chip{font-size:9.5px;letter-spacing:.03em;padding:0 6px}.filters select.chip{padding-right:18px;background-position:right 6px center}}
 </style>
 </head>
 <body>
