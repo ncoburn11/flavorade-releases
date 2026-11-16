@@ -380,17 +380,28 @@ const COLLAB_FIX = [...new Set(R.products.map(p => p[1]).filter(c => /\s/.test(c
    matching words. "LA" means Los Angeles County only, never La Mesa / La Habra / Lancaster-by-spelling. */
 const AREAS = window.AREAS || { counties: {}, areas: [], socal: [], chains: {} };
 const CITY_COUNTY = new Map(); Object.entries(AREAS.counties).forEach(([c, cities]) => cities.forEach(x => CITY_COUNTY.set(x, c)));
-let areaQ = null, areaHit = null;
+let areaQ = null, areaHit = null, NAMES = null;
+// Area search, alone ("SD") or combined with other words at the start or end ("Zmelonz SD", "LA No Till").
+// A phrase that is part of a real name ("La Mesa", "LA Kush", "LA Cheese") is never split into an area.
 const area = () => {
   const q = norm(S.q).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
   if (q === areaQ) return areaHit;
   areaQ = q; areaHit = null;
-  const a = AREAS.areas.find(x => x.names.includes(q));
-  if (a) {
-    const counties = new Set(a.counties);
-    areaHit = { counties, socal: a.counties.every(c => AREAS.socal.includes(c)) };
-  }
-  return areaHit;
+  if (!q) return null;
+  const mk = (a, rest) => ({ counties: new Set(a.counties), socal: a.counties.every(c => AREAS.socal.includes(c)), rest });
+  const whole = AREAS.areas.find(x => x.names.includes(q));
+  if (whole) return (areaHit = mk(whole, ''));
+  if (!NAMES) NAMES = [...new Set(products.flatMap(p => [p.name, p.collab]).concat(drops.flatMap(d => [d.shop, d.city])))]
+    .map(x => ' ' + norm(x || '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim());
+  if (NAMES.some(n => n.includes(' ' + q))) return null;
+  let best = null;
+  AREAS.areas.forEach(x => x.names.forEach(n => {
+    let rest = null;
+    if (q.startsWith(n + ' ')) rest = q.slice(n.length + 1);
+    else if (q.endsWith(' ' + n)) rest = q.slice(0, -n.length - 1);
+    if (rest && (!best || n.length > best.n.length)) best = { n, x, rest: rest.trim() };
+  }));
+  return (areaHit = best ? mk(best.x, best.rest) : null);
 };
 const inArea = d => {
   const a = area(); if (!a) return true;
@@ -398,7 +409,7 @@ const inArea = d => {
   if (chain) return chain === 'all' || (chain === 'socal' && a.socal);
   return a.counties.has(CITY_COUNTY.get(d.city));
 };
-const terms = () => { if (area()) return []; let q = norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
+const terms = () => { const ar = area(); let q = ar ? ar.rest : norm(S.q).replace(/\s+/g, ' '); COLLAB_FIX.forEach(([a, b]) => { q = q.split(a).join(b); }); return q.split(' ').filter(Boolean); };
 // A search word must match the start of a word ("sac" finds Sacramento, not "Kush Sack"... and "la" not "Black").
 const wordHit = (hay, x) => hay.startsWith(x) || hay.includes(' ' + x) || hay.includes('-' + x) || hay.includes('(' + x) || hay.includes('|' + x);
 const hits = (hay, t) => t.every(x => wordHit(hay, x));
