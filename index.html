@@ -18,8 +18,17 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;background:var(--bg)}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:16px/1.5 var(--body)}
+/* page background: plum + soft smoky purple haze, same as flavoradeextracts.com (px sizes because the page is very tall inside the iframe) */
+html,body{
+  background-color:#30143D;
+  background-image:
+    radial-gradient(900px 520px at 15% 0px, rgba(122,58,170,.42), rgba(122,58,170,0) 70%),
+    radial-gradient(800px 600px at 95% 1100px, rgba(103,48,143,.38), rgba(103,48,143,0) 70%),
+    radial-gradient(700px 450px at 70% 380px, rgba(75,32,103,.35), rgba(75,32,103,0) 70%);
+  background-repeat:no-repeat;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;color:var(--ink);font:16px/1.5 var(--body)}
 button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:900px;margin:0 auto;padding:0 16px}
 /* hero (same pattern as "THE BEST / CURED RESIN.") */
@@ -44,7 +53,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .drow-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .tabheart{width:13px;height:13px;vertical-align:-1px}
 /* sticky controls */
-.controls{position:sticky;top:0;z-index:10;background:rgba(43,22,64,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.controls{position:sticky;top:0;z-index:10;background:rgba(48,20,61,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .controls .wrap{padding-top:12px;padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
 .search{position:relative}
 .search input{width:100%;font:inherit;font-size:17px;padding:13px 46px;border-radius:30px;border:1.5px solid var(--line);background:rgba(255,255,255,.07);color:#fff;outline:none}
@@ -97,7 +106,7 @@ main{padding-bottom:44px}
 .grid{display:grid;gap:10px}
 @media(min-width:640px){.grid.two{grid-template-columns:1fr 1fr}}
 /* flavor card */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(228,203,239,.14);border-radius:14px;overflow:hidden}
 .fl-head{display:flex;gap:12px;align-items:flex-start;padding:14px 12px 14px 15px;width:100%;text-align:left;background:none;border:0}
 .fl-main{flex:1;min-width:0}
 .fl-name{font:700 18px/1.2 var(--head);letter-spacing:0}
@@ -121,7 +130,7 @@ main{padding-bottom:44px}
 .card.open .fl-more{display:block}
 /* No Till Kings + Wizard Trees: animated gold border, a light sweep across the card, twinkling sparkles, shimmering name */
 @property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
-.card.shine{position:relative;border-color:transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,conic-gradient(from var(--spin),#F4B538,#fff3c4,#E4CBEF,#F4B538,#fff3c4,#E4CBEF,#F4B538) border-box;box-shadow:0 0 18px rgba(244,181,56,.3);animation:shine-spin 6s linear infinite,shine-glow 2.4s ease-in-out infinite}
+.card.shine{position:relative;border-color:transparent;background:linear-gradient(#381D45,#381D45) padding-box,conic-gradient(from var(--spin),#F4B538,#fff3c4,#E4CBEF,#F4B538,#fff3c4,#E4CBEF,#F4B538) border-box;box-shadow:0 0 18px rgba(244,181,56,.3);animation:shine-spin 6s linear infinite,shine-glow 2.4s ease-in-out infinite}
 .card.shine::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,243,196,.2) 47%,rgba(255,255,255,.34) 50%,rgba(255,243,196,.2) 53%,transparent 65%) no-repeat;background-size:250% 100%;background-position:150% 0;animation:shine-sweep 4.5s ease-in-out infinite}
 .card.shine .fl-name{background:linear-gradient(90deg,#fff 0%,#ffe7a3 25%,#fff 50%,#e9c6ff 75%,#fff 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine-text 4s linear infinite}
 .sparkles{position:absolute;inset:0;pointer-events:none;z-index:1}
@@ -164,7 +173,7 @@ main{padding-bottom:44px}
 @keyframes chip-twinkle{0%,100%{opacity:.35;transform:scale(.55) rotate(0)}50%{opacity:1;transform:scale(1.05) rotate(45deg)}}
 @media (prefers-reduced-motion:reduce){.flist button.shine,.flist button.shine::before{animation:none}}
 .st-hist{margin-top:10px;font-size:13px;color:var(--lav)}
-.wkb{border:1px solid var(--line);border-left:4px solid var(--yellow);border-radius:12px;margin:0 0 16px;background:var(--panel)}
+.wkb{border:1px solid rgba(228,203,239,.14);border-left:4px solid var(--yellow);border-radius:14px;margin:0 0 16px;background:rgba(255,255,255,.04)}
 .wkb>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 15px}
 .wkb>summary::-webkit-details-marker{display:none}
 .wkb>summary h3{margin:0;font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.015em;line-height:1.02;font-size:22px;color:#FFFFFF}
@@ -176,7 +185,7 @@ main{padding-bottom:44px}
 .drow .st-name{font-size:15.5px}
 .drow .deal-b{margin-top:6px;font-size:12px}
 .drow .flist{margin-top:8px}
-.picks{border:2px solid var(--yellow);border-radius:14px;padding:4px 14px 14px;margin-top:22px;background:rgba(244,181,56,.06)}
+.picks{border:2px solid var(--yellow);border-radius:14px;padding:4px 14px 14px;margin-top:22px;background:rgba(255,255,255,.04)}
 .picks .sec-title{margin-top:14px}
 /* misc */
 .empty{text-align:center;color:var(--lav);padding:40px 10px}
@@ -185,7 +194,7 @@ main{padding-bottom:44px}
 .more-btn:hover{filter:brightness(1.06)}
 .hint{font-size:13px;color:var(--lav);margin:10px 0 0}
 .hint button{border:1px solid var(--line);background:transparent;border-radius:30px;padding:3px 11px;margin:2px;font-size:13px;color:#fff}
-footer{background:linear-gradient(115deg,#361747 0%,#210d2d 100%);border-top:1px solid var(--line);color:var(--lav);font-size:13px;text-align:center;padding:22px 16px 30px}
+footer{background:transparent;border-top:1px solid var(--line);color:var(--lav);font-size:13px;text-align:center;padding:22px 16px 30px}
 footer p{margin:4px 0}
 footer b{color:#fff}
 mark{background:none;color:var(--yellow);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
